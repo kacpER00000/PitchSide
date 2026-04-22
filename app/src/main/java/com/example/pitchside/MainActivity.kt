@@ -1,6 +1,8 @@
 package com.example.pitchside
 
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
@@ -20,16 +22,33 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val navView: BottomNavigationView = binding.navView
-
         val navController = findNavController(R.id.nav_host_fragment_activity_main)
+        val toolbar = binding.topToolbar
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
+        setSupportActionBar(toolbar)
         val appBarConfiguration = AppBarConfiguration(
             setOf(
-                R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_notifications
+                R.id.scheduledFragment, R.id.navigation_home, R.id.favouriteFragment, R.id.loginFragment
             )
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_login -> {
+                val navController = findNavController(R.id.nav_host_fragment_activity_main)
+                navController.navigate(R.id.loginFragment)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 }

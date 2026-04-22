@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">PitchSide</string>
-    <string name="title_home">Home</string>
-    <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
+    <string name="title_home">Główna</string>
+    <string name="title_scheduled">Zaplanowane</string>
+    <string name="title_favourite">Ulubione</string>
+    <string name="title_login">Zaloguj się</string>
 </resources>
