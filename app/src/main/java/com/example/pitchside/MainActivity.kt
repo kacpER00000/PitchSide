@@ -39,7 +39,7 @@ class MainActivity : AppCompatActivity() {
             val builder = NavOptions.Builder()
                 .setLaunchSingleTop(true)
                 .setRestoreState(false)
-                .setPopUpTo(navController.graph.startDestinationId, false, false)
+                .setPopUpTo(navController.graph.startDestinationId, false, true)
             val options = builder.build()
             try {
                 navController.navigate(item.itemId, null, options)
