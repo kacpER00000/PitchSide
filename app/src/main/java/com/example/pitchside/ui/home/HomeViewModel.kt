@@ -7,8 +7,8 @@ import com.example.pitchside.api.dao.CompetitionAPI
 import com.example.pitchside.api.dao.MatchesAPI
 import com.example.pitchside.api.responses.CompetitionResponse
 import com.example.pitchside.api.responses.CompetitionsResponse
+import com.example.pitchside.api.responses.MatchEntry
 import com.example.pitchside.api.responses.MatchResponse
-import com.example.pitchside.api.responses.ScheduledResponse
 import com.example.pitchside.managers.RetrofitManager
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -20,7 +20,7 @@ class HomeViewModel : ViewModel() {
     private val matchesAPI = RetrofitManager.create<MatchesAPI>()
     private val _competitions = MutableLiveData<List<CompetitionResponse>>(emptyList())
     val competitions = _competitions
-    private val _scheduled = MutableLiveData<List<MatchResponse>>(emptyList())
+    private val _scheduled = MutableLiveData<List<MatchEntry>>(emptyList())
     val scheduled = _scheduled
     private val _error = MutableLiveData(false)
     val error = _error
@@ -38,10 +38,10 @@ class HomeViewModel : ViewModel() {
                 val scheduledDeferred = async { matchesAPI.getScheduledMatches() }
                 val responses = awaitAll(competitionDeferred,scheduledDeferred)
                 val competitionResponse = responses[0] as Response<CompetitionsResponse>
-                val scheduledResponse = responses[1] as Response<ScheduledResponse>
-                if(competitionResponse.isSuccessful && scheduledResponse.isSuccessful){
+                val matchResponse = responses[1] as Response<MatchResponse>
+                if(competitionResponse.isSuccessful && matchResponse.isSuccessful){
                     _competitions.value = competitionResponse.body()?.competitions
-                    _scheduled.value = scheduledResponse.body()?.matches
+                    _scheduled.value = matchResponse.body()?.matches
                 } else {
                     _error.value = true
                 }

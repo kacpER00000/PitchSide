@@ -4,12 +4,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pitchside.api.dao.MatchesAPI
-import com.example.pitchside.api.responses.MatchResponse
+import com.example.pitchside.api.responses.MatchEntry
 import com.example.pitchside.managers.RetrofitManager
 import kotlinx.coroutines.launch
 
 class ScheduledViewModel : ViewModel() {
-    private val _scheduled = MutableLiveData<List<MatchResponse>>(emptyList())
+    private val _scheduled = MutableLiveData<List<MatchEntry>>(emptyList())
     val scheduled = _scheduled
     private val _error = MutableLiveData(false)
     private val _isFetching = MutableLiveData(false)

@@ -29,7 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.pitchside.api.responses.MatchResponse
+import com.example.pitchside.api.responses.MatchEntry
 import com.example.pitchside.api.responses.TeamResponse
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -38,7 +38,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 
@@ -69,7 +68,7 @@ fun ScheduledScreen(viewModel: ScheduledViewModel){
 }
 
 @Composable
-fun ScheduledScreenContent(matches: List<MatchResponse>, hasError: Boolean, isFetching: Boolean){
+fun ScheduledScreenContent(matches: List<MatchEntry>, hasError: Boolean, isFetching: Boolean){
     val context = LocalContext.current
     LaunchedEffect(hasError) {
         if(hasError){
@@ -104,7 +103,7 @@ fun ScheduledScreenContent(matches: List<MatchResponse>, hasError: Boolean, isFe
 fun ScheduledScreenPreview(){
     ScheduledScreenContent(
         matches = listOf(
-            MatchResponse(null,null,null,null,null, TeamResponse(1,"Cagliari Calcio","Cagliari","CAG","https://crests.football-data.org/104.png"),TeamResponse(2,"Atalanta BC","Atalanta","ATA","https://crests.football-data.org/102.png"),null,null)
+            MatchEntry(null,null,null,null,null, TeamResponse(1,"Cagliari Calcio","Cagliari","CAG","https://crests.football-data.org/104.png"),TeamResponse(2,"Atalanta BC","Atalanta","ATA","https://crests.football-data.org/102.png"),null,null)
         ),
         hasError = false,
         isFetching = false
@@ -129,7 +128,7 @@ fun ScheduledHeader() {
 }
 
 @Composable
-fun MatchesList(matches: List<MatchResponse>){
+fun MatchesList(matches: List<MatchEntry>){
     LazyColumn {
         items(matches){ match ->
             MatchItem(match)
@@ -138,7 +137,7 @@ fun MatchesList(matches: List<MatchResponse>){
 }
 
 @Composable
-fun MatchItem(match: MatchResponse) {
+fun MatchItem(match: MatchEntry) {
     Card(
         modifier = Modifier
             .fillMaxWidth()

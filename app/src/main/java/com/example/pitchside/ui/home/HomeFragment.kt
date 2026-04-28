@@ -44,9 +44,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.findNavController
 import coil.compose.AsyncImage
 import com.example.pitchside.api.responses.CompetitionResponse
-import com.example.pitchside.api.responses.MatchResponse
+import com.example.pitchside.api.responses.MatchEntry
 
 class HomeFragment : Fragment() {
 
@@ -57,23 +58,40 @@ class HomeFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        return ComposeView(requireContext()).apply{
-            setContent { HomeScreen(viewModel) }
+        return ComposeView(requireContext()).apply {
+            setContent {
+                HomeScreen(
+                    viewModel = viewModel,
+                    onLeagueClick = { competitionCode:String ->
+
+                        val bundle = Bundle().apply {
+                            putString("competitionCode", competitionCode)
+                        }
+                        findNavController().navigate(R.id.competitionDetailsFragment, bundle)
+                    }
+                )
+            }
         }
     }
 }
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel){
+fun HomeScreen(viewModel: HomeViewModel, onLeagueClick: (String) -> Unit){
     val matches by viewModel.scheduled.observeAsState(emptyList())
     val competitions by viewModel.competitions.observeAsState(emptyList())
     val hasError by viewModel.error.observeAsState(false)
     val isFetching by viewModel.isFetching.observeAsState(false)
-    HomeScreenContent(matches,competitions,hasError,isFetching)
+    HomeScreenContent(matches,competitions,hasError,isFetching, onLeagueClick)
 }
 
 @Composable
-fun HomeScreenContent(matches: List<MatchResponse>, competitions: List<CompetitionResponse>, hasError: Boolean, isFetching: Boolean){
+fun HomeScreenContent(
+    matches: List<MatchEntry>,
+    competitions: List<CompetitionResponse>,
+    hasError: Boolean,
+    isFetching: Boolean,
+    onLeagueClick: (String) -> Unit
+){
     val context = LocalContext.current
     var competitionsExpanded by remember { mutableStateOf(false) }
     var matchesExpanded by remember { mutableStateOf(false) }
@@ -138,7 +156,7 @@ fun HomeScreenContent(matches: List<MatchResponse>, competitions: List<Competiti
                 Box(
                     modifier = Modifier.heightIn(max = 400.dp)
                 ){
-                    CompetitionsList(competitions)
+                    CompetitionsList(competitions, onLeagueClick)
                 }
             }
             Box(
@@ -184,36 +202,23 @@ fun HomeScreenContent(matches: List<MatchResponse>, competitions: List<Competiti
 }
 
 @Composable
-fun CompetitionsHeader(){
-    Box(
-        modifier = Modifier.fillMaxWidth()
-            .height(51.dp)
-            .background(Color(0xFF595959)),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Text(
-            text = "Ligi",
-            color = Color.White,
-            modifier = Modifier.padding(start = 10.dp)
-        )
-    }
-}
-
-@Composable
-fun CompetitionsList(competitions: List<CompetitionResponse>){
+fun CompetitionsList(competitions: List<CompetitionResponse>, onLeagueClick: (String) -> Unit){
     LazyColumn {
         items(competitions) {competition ->
-            CompetitionItem(competition)
+            CompetitionItem(competition, onLeagueClick)
         }
     }
 }
 
 @Composable
-fun CompetitionItem(competition: CompetitionResponse){
+fun CompetitionItem(competition: CompetitionResponse, onLeagueClick: (String) -> Unit){
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(8.dp)
+            .clickable{
+                competition.code?.let { onLeagueClick(it) }
+            },
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF8F8E8E)
         )
@@ -245,24 +250,7 @@ fun CrestAsyncImage(url: String, competitionsName: String){
 }
 
 @Composable
-fun ScheduledHeader() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(51.dp)
-            .background(Color(0xFF595959)),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Text(
-            text = "Zaplanowane mecze",
-            color = Color.White,
-            modifier = Modifier.padding(start = 10.dp)
-        )
-    }
-}
-
-@Composable
-fun MatchesList(matches: List<MatchResponse>){
+fun MatchesList(matches: List<MatchEntry>){
     LazyColumn {
         items(matches){ match ->
             MatchItem(match)
@@ -271,7 +259,7 @@ fun MatchesList(matches: List<MatchResponse>){
 }
 
 @Composable
-fun MatchItem(match: MatchResponse) {
+fun MatchItem(match: MatchEntry) {
     Card(
         modifier = Modifier
             .fillMaxWidth()

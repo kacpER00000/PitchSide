@@ -1,30 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/navigation_home"
-    android:label="PitchSide"
+xmlns:app="http://schemas.android.com/apk/res-auto"
+xmlns:tools="http://schemas.android.com/tools"
+android:id="@+id/mobile_navigation"
+app:startDestination="@+id/navigation_home"
+android:label="PitchSide"
     >
-    <fragment
-        android:id="@+id/navigation_home"
-        android:name="com.example.pitchside.ui.home.HomeFragment"
-        tools:layout="@layout/fragment_home" />
-    <fragment
-        android:id="@+id/favouriteFragment"
-        android:name="com.example.pitchside.ui.favourite.FavouriteFragment"
-        tools:layout="@layout/fragment_favourite" />
-    <fragment
-        android:id="@+id/scheduledFragment"
-        android:name="com.example.pitchside.ui.scheduled.ScheduledFragment"
-        tools:layout="@layout/fragment_scheduled" />
-    <fragment
-        android:id="@+id/loginFragment"
-        android:name="com.example.pitchside.ui.login.LoginFragment"
-        tools:layout="@layout/fragment_login" />
-    <fragment
-        android:id="@+id/registerFragment"
-        android:name="com.example.pitchside.ui.register.RegisterFragment"
-        tools:layout="@layout/fragment_register" />
+<fragment
+    android:id="@+id/navigation_home"
+    android:name="com.example.pitchside.ui.home.HomeFragment"
+    tools:layout="@layout/fragment_home" />
+<fragment
+    android:id="@+id/favouriteFragment"
+    android:name="com.example.pitchside.ui.favourite.FavouriteFragment"
+    tools:layout="@layout/fragment_favourite" />
+<fragment
+    android:id="@+id/scheduledFragment"
+    android:name="com.example.pitchside.ui.scheduled.ScheduledFragment"
+    tools:layout="@layout/fragment_scheduled" />
+<fragment
+    android:id="@+id/loginFragment"
+    android:name="com.example.pitchside.ui.login.LoginFragment"
+    tools:layout="@layout/fragment_login" />
+<fragment
+    android:id="@+id/registerFragment"
+    android:name="com.example.pitchside.ui.register.RegisterFragment"
+    tools:layout="@layout/fragment_register" />
+<fragment
+    android:id="@+id/competitionDetailsFragment"
+    android:name="com.example.pitchside.ui.details.CompetitionDetailsFragment">
+    <argument
+        android:name="competitionCode"
+        app:argType="string"
+        />
+</fragment>
 
 </navigation>
