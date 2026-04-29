@@ -98,18 +98,6 @@ fun ScheduledScreenContent(matches: List<MatchEntry>, hasError: Boolean, isFetch
     }
 }
 
-@Preview
-@Composable
-fun ScheduledScreenPreview(){
-    ScheduledScreenContent(
-        matches = listOf(
-            MatchEntry(null,null,null,null,null, TeamResponse(1,"Cagliari Calcio","Cagliari","CAG","https://crests.football-data.org/104.png"),TeamResponse(2,"Atalanta BC","Atalanta","ATA","https://crests.football-data.org/102.png"),null,null)
-        ),
-        hasError = false,
-        isFetching = false
-    )
-}
-
 @Composable
 fun ScheduledHeader() {
     Box(

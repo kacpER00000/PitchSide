@@ -14,19 +14,23 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import retrofit2.Response
+import java.util.SortedMap
 
 class CompetitionDetailsViewModel : ViewModel() {
+    private val _currentMatchday = MutableLiveData(1)
     private val _scheduled = MutableLiveData<List<MatchEntry>>(emptyList())
-    val scheduled = _scheduled
+    private val _scheduledMatchesByMatchday = MutableLiveData<SortedMap<Int, List<MatchEntry>>>()
+    val scheduledMatchesByMatchday = _scheduledMatchesByMatchday
     private val _standings = MutableLiveData<StandingResponse>()
     val standings = _standings
     private val _finished = MutableLiveData<List<MatchEntry>>(emptyList())
-    val finished = _finished
+    private val _finishedMatchesByMatchday = MutableLiveData<SortedMap<Int, List<MatchEntry>>>()
+    val finishedMatchesByMatchday = _finishedMatchesByMatchday
     private val _error = MutableLiveData(false)
     private val _isFetching = MutableLiveData(false)
     val error = _error
     val isFetching = _isFetching
-    private val competitionCode = MutableLiveData<String>("")
+    private val competitionCode = MutableLiveData("")
     val matchesAPI = RetrofitManager.create<MatchesAPI>()
     val competitionAPI = RetrofitManager.create<CompetitionAPI>()
 
@@ -40,14 +44,16 @@ class CompetitionDetailsViewModel : ViewModel() {
                 val standingDeferred = async {competitionAPI.getStandingForCompetition(competitionCode.value!!)}
                 val scheduledDeferred = async { matchesAPI.getScheduledMatchesForCompetition(competitionCode.value!!) }
                 val finishedDeferred = async {matchesAPI.getFinishedMatchesForCompetition(competitionCode.value!!)}
-                val responses = awaitAll(standingDeferred,scheduledDeferred, finishedDeferred)
+                val responses = awaitAll(standingDeferred,scheduledDeferred,finishedDeferred)
                 val standingResponse = responses[0] as Response<StandingResponse>
-                val scheduledResponse = responses[1] as Response<MatchResponse>
+                var scheduledResponse = responses[1] as Response<MatchResponse>
                 val finishedResponse = responses[2] as Response<MatchResponse>
                 if(standingResponse.isSuccessful && scheduledResponse.isSuccessful && finishedResponse.isSuccessful){
                     _standings.value = standingResponse.body()
                     _scheduled.value = scheduledResponse.body()?.matches
-                    _finished.value = scheduledResponse.body()?.matches
+                    _finished.value = finishedResponse.body()?.matches?.reversed()
+                    _currentMatchday.value = standingResponse.body()?.season?.currentMatchday
+                    groupMatchesPerMatchday()
                 } else {
                     _error.value = true
                 }
@@ -57,5 +63,12 @@ class CompetitionDetailsViewModel : ViewModel() {
                 _isFetching.value = false
             }
         }
+    }
+
+    fun groupMatchesPerMatchday(){
+        val allFinished = _finished.value ?: emptyList()
+        val scheduled = _scheduled.value ?: emptyList()
+        _finishedMatchesByMatchday.value = allFinished.groupBy { it.matchday ?: 1 }.toSortedMap(reverseOrder())
+        _scheduledMatchesByMatchday.value = scheduled.groupBy { it.matchday ?: 1 }.toSortedMap()
     }
 }
