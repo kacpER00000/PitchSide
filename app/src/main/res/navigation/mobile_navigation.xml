@@ -26,5 +26,8 @@
         android:id="@+id/registerFragment"
         android:name="com.example.pitchside.ui.register.RegisterFragment"
         tools:layout="@layout/fragment_register" />
-
+    <fragment
+        android:id="@+id/accountFragment"
+        android:name="com.example.pitchside.ui.account.AccountFragment"
+        tools:layout="@layout/fragment_account" />
 </navigation>

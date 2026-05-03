@@ -116,12 +116,17 @@ data class LeagueScorer(
     tableName = "Ulubione",
     indices = [Index(value = ["uzytkownik_id", "typ_obiektu", "obiekt_id"], unique = true)],
     foreignKeys = [
-        ForeignKey(entity = User::class, parentColumns = ["uzytkownik_id"], childColumns = ["uzytkownik_id"], onDelete = ForeignKey.CASCADE)
+        ForeignKey(
+            entity = User::class,
+            parentColumns = ["uzytkownik_id"],
+            childColumns = ["uzytkownik_id"],
+            onDelete = ForeignKey.CASCADE
+        )
     ]
 )
 data class Favorite(
     @PrimaryKey(autoGenerate = true) val ulubione_id: Int = 0,
     val uzytkownik_id: Int,
-    val typ_obiektu: String, // "LIGA" lub "DRUZYNA"
-    val obiekt_id: Int
+    val typ_obiektu: String, // "LIGA", "DRUZYNA" lub "MECZ" <--- Dodajemy obsługę meczów
+    val obiekt_id: Int // Tutaj trafi mecz_id, liga_id lub druzyna_id
 )
