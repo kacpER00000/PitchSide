@@ -40,6 +40,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import coil.decode.SvgDecoder
+import coil.request.ImageRequest
 
 class ScheduledFragment : Fragment() {
 
@@ -168,7 +170,11 @@ fun TeamCrestImage(
     teamName: String
 ) {
     AsyncImage(
-        model = url,
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(url)
+            .decoderFactory(SvgDecoder.Factory())
+            .crossfade(true)
+            .build(),
         contentDescription = teamName,
         modifier = Modifier.size(50.dp)
     )

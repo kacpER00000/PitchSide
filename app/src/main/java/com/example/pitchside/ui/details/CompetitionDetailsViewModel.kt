@@ -68,7 +68,16 @@ class CompetitionDetailsViewModel : ViewModel() {
     fun groupMatchesPerMatchday(){
         val allFinished = _finished.value ?: emptyList()
         val scheduled = _scheduled.value ?: emptyList()
-        _finishedMatchesByMatchday.value = allFinished.groupBy { it.matchday ?: 1 }.toSortedMap(reverseOrder())
-        _scheduledMatchesByMatchday.value = scheduled.groupBy { it.matchday ?: 1 }.toSortedMap()
+        _finishedMatchesByMatchday.value = allFinished.groupBy { getStageOrder(it) }.toSortedMap(reverseOrder())
+        _scheduledMatchesByMatchday.value = scheduled.groupBy { getStageOrder(it) }.toSortedMap()
+    }
+
+    private fun getStageOrder(match: MatchEntry): Int {
+        return when(match.stage){
+            "FINAL" -> 100
+            "SEMI_FINALS" -> 99
+            "QUARTER_FINALS" -> 98
+            else -> match.matchday ?: 1
+        }
     }
 }

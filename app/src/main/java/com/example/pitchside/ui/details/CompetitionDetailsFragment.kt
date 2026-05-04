@@ -1,12 +1,14 @@
 package com.example.pitchside.ui.details
 
+import android.R
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,14 +20,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -46,15 +47,20 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import coil.compose.AsyncImage
+import coil.decode.SvgDecoder
+import coil.request.ImageRequest
 import com.example.pitchside.api.responses.MatchEntry
+import com.example.pitchside.api.responses.Standing
 import com.example.pitchside.api.responses.StandingResponse
 import com.example.pitchside.api.responses.Table
-import com.example.pitchside.ui.home.CrestAsyncImage
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.getValue
 
 class CompetitionDetailsFragment : Fragment() {
     private val viewModel: CompetitionDetailsViewModel by viewModels()
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -63,14 +69,15 @@ class CompetitionDetailsFragment : Fragment() {
         val competitionCode = arguments?.getString("competitionCode") ?: "Unknown"
         viewModel.setCompetitionCode(competitionCode)
         viewModel.fetchAllData()
-        return ComposeView(requireContext()).apply{
+        return ComposeView(requireContext()).apply {
             setContent { CompetitionDetailsScreen(viewModel) }
         }
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel){
+fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel) {
     val standing by viewModel.standings.observeAsState()
     val scheduled by viewModel.scheduledMatchesByMatchday.observeAsState()
     val finished by viewModel.finishedMatchesByMatchday.observeAsState()
@@ -82,7 +89,7 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel){
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(hasError) {
-        if(hasError){
+        if (hasError) {
             Toast.makeText(
                 context,
                 "Wystąpił błąd podczas pobierania danych.",
@@ -92,7 +99,7 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel){
     }
 
 
-    if(isFetching){
+    if (isFetching) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -105,7 +112,8 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel){
             )
         }
     } else {
-        Column(modifier = Modifier.fillMaxSize(),
+        Column(
+            modifier = Modifier.fillMaxSize(),
         ) {
             Column(
                 modifier = Modifier
@@ -117,10 +125,15 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel){
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val flagModel = if (standing?.area?.flag.isNullOrBlank()) {
+                        "https://publicdomainvectors.org/photos/Anonymous_Flag_of_the_United_Nations.png"
+                    } else {
+                        standing?.area?.flag
+                    }
                     CrestAsyncImage(
-                        standing?.area?.flag ?: "",
+                        flagModel.toString(),
                         standing?.area?.name ?: "Unknown",
-                        30
+                        50
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
@@ -129,7 +142,11 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel){
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    thickness = 1.dp,
+                    color = Color.Gray
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -147,20 +164,33 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel){
                         modifier = Modifier.weight(1f)
                     )
                 }
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    thickness = 1.dp,
+                    color = Color.Gray
+                )
             }
-            TabRow(selectedTabIndex = selectedTabIndex) {
+            TabRow(
+                selectedTabIndex = selectedTabIndex
+            ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
+                        modifier = Modifier.background(Color(0xFF595959)),
                         selected = selectedTabIndex == index,
                         onClick = { selectedTabIndex = index },
-                        text = { Text(title) }
+                        text = {
+                            Text(
+                                text=title,
+                                color = Color.White
+                            )
+                        }
                     )
                 }
             }
             Box(modifier = Modifier.fillMaxSize()) {
                 when (selectedTabIndex) {
-                    0 -> ScheduledMatchesContent(scheduled!!)
-                    1 -> CompetitionTableContent(standing!!)
+                    0 -> ScheduledMatchesContent(scheduled ?: emptyMap())
+                    1 -> CompetitionTableContent(standing ?: StandingResponse())
                     2 -> ResultsContent(finished ?: emptyMap())
                 }
             }
@@ -169,35 +199,43 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel){
 
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ScheduledMatchesContent(scheduled: Map<Int?, List<MatchEntry>?>){
+fun ScheduledMatchesContent(scheduled: Map<Int?, List<MatchEntry>?>) {
     MatchesList(scheduled)
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ResultsContent(finished: Map<Int?, List<MatchEntry>?>){
+fun ResultsContent(finished: Map<Int?, List<MatchEntry>?>) {
     MatchesList(finished)
 }
 
 @Composable
-fun CompetitionTableContent(standing: StandingResponse){
-    StandingList(standing.standings[0].table)
+fun CompetitionTableContent(standing: StandingResponse) {
+    StandingList(standing.standings)
 }
 
-
 @Composable
-fun MatchesList(finishedMatches: Map<Int?, List<MatchEntry>?>){
+@RequiresApi(Build.VERSION_CODES.O)
+fun MatchesList(finishedMatches: Map<Int?, List<MatchEntry>?>) {
     LazyColumn {
-        finishedMatches.forEach { (matchday,matches) ->
-            item{
+        finishedMatches.forEach { (matchday, matches) ->
+            item {
                 Box(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
                         .height(51.dp)
                         .background(Color(0xFF595959)),
                     contentAlignment = Alignment.CenterStart,
-                ){
+                ) {
                     Text(
-                        text = "Kolejka $matchday",
+                        text = when(matchday){
+                            100 -> "Finał"
+                            99 -> "Półfinał"
+                            98 -> "Ćwierćfinał"
+                            else -> "Kolejka ${matchday}"
+                        },
                         color = Color.White,
                         modifier = Modifier.padding(start = 10.dp)
                     )
@@ -212,12 +250,13 @@ fun MatchesList(finishedMatches: Map<Int?, List<MatchEntry>?>){
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MatchItem(match: MatchEntry) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF8F8E8E)
         )
@@ -225,55 +264,99 @@ fun MatchItem(match: MatchEntry) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
+                modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                CrestAsyncImage(match.homeTeam.crest ?: "", match.homeTeam.name ?: "Unknown",50)
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(text = match.homeTeam.shortName ?: "", color = Color.White)
+                CrestAsyncImage(match.homeTeam.crest ?: "", match.homeTeam.name ?: "Unknown", 35)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = match.homeTeam.shortName ?: "",
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1
+                )
             }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+                    .width(80.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if(match.score?.fullTime?.home != null){
-                    Text(text = match.score.fullTime.home.toString(), color = Color.White)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    val homeScore = match.score?.fullTime?.home
+                    val awayScore = match.score?.fullTime?.away
+
+                    if (homeScore != null && awayScore != null) {
+                        Text(
+                            text = "$homeScore : $awayScore",
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    } else {
+                        Text(
+                            text = "vs",
+                            color = Color.White.copy(alpha = 0.7f),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
-                Text(text = "-", color = Color.White)
-                if(match.score?.fullTime?.away != null){
-                    Text(text = match.score.fullTime.away.toString(), color = Color.White)
+                if (match.utcDate != null) {
+                    val parsedDate = OffsetDateTime.parse(match.utcDate)
+                    val date = parsedDate.format(DateTimeFormatter.ofPattern("dd.MM"))
+                    val hour = parsedDate.format(DateTimeFormatter.ofPattern("HH:mm"))
+
+                    Text(
+                        text = hour,
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    Text(
+                        text = date,
+                        color = Color.White.copy(alpha = 0.7f),
+                        style = MaterialTheme.typography.labelSmall
+                    )
                 }
             }
-
             Row(
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End
             ) {
-                Text(text = match.awayTeam.shortName ?: "", color = Color.White)
-                Spacer(modifier = Modifier.width(12.dp))
-                CrestAsyncImage(match.awayTeam.crest ?: "", match.awayTeam.name ?: "Unknown",50)
+                Text(
+                    text = match.awayTeam.shortName ?: "",
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                CrestAsyncImage(match.awayTeam.crest ?: "", match.awayTeam.name ?: "Unknown", 35)
             }
         }
     }
 }
 
 @Composable
-fun StandingList(table: List<Table>){
-    Column(modifier = Modifier.fillMaxSize()){
+fun StandingList(groups: List<Standing>) {
+    Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
-        ){
+        ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.wrapContentWidth()
-            ){
+            ) {
                 Text(
                     text = "#",
                     color = Color.White,
@@ -289,7 +372,7 @@ fun StandingList(table: List<Table>){
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.wrapContentWidth()
-            ){
+            ) {
                 Text(
                     text = "M",
                     color = Color.White
@@ -309,15 +392,31 @@ fun StandingList(table: List<Table>){
             }
         }
         LazyColumn {
-            items(table) {tableEntry ->
-                StandingItem(tableEntry)
+            groups.forEach { groupEntry ->
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFF444444))
+                            .padding(vertical = 8.dp, horizontal = 16.dp)
+                    ) {
+                        Text(
+                            text = groupEntry.group ?: "Tabela",
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                }
+                items(groupEntry.table) { tableEntry ->
+                    StandingItem(tableEntry)
+                }
             }
         }
     }
 }
 
 @Composable
-fun StandingItem(tableEntry: Table){
+fun StandingItem(tableEntry: Table) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -325,25 +424,25 @@ fun StandingItem(tableEntry: Table){
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF8F8E8E)
         )
-    ){
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
-        ){
+        ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.wrapContentWidth()
-            ){
+            ) {
                 Text(
                     text = tableEntry.position.toString(),
                     color = Color.White,
                     modifier = Modifier.width(24.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                CrestAsyncImage(tableEntry.team.crest ?: "", tableEntry.team.name ?: "Unknown",50)
+                CrestAsyncImage(tableEntry.team.crest ?: "", tableEntry.team.name ?: "Unknown", 50)
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = tableEntry.team.shortName ?: "",
@@ -353,7 +452,7 @@ fun StandingItem(tableEntry: Table){
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.wrapContentWidth()
-            ){
+            ) {
                 Text(
                     text = tableEntry.playedGames.toString(),
                     color = Color.White
@@ -376,9 +475,13 @@ fun StandingItem(tableEntry: Table){
 }
 
 @Composable
-fun CrestAsyncImage(url: String, name: String, size: Int){
+fun CrestAsyncImage(url: String, name: String, size: Int) {
     AsyncImage(
-        model = url,
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(url)
+            .decoderFactory(SvgDecoder.Factory())
+            .crossfade(true)
+            .build(),
         contentDescription = name,
         modifier = Modifier.size(size.dp)
     )

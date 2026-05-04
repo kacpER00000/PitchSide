@@ -46,6 +46,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.findNavController
 import coil.compose.AsyncImage
+import coil.decode.SvgDecoder
+import coil.request.ImageRequest
 import com.example.pitchside.api.responses.CompetitionResponse
 import com.example.pitchside.api.responses.MatchEntry
 
@@ -243,7 +245,11 @@ fun CompetitionItem(competition: CompetitionResponse, onLeagueClick: (String) ->
 @Composable
 fun CrestAsyncImage(url: String, competitionsName: String){
     AsyncImage(
-        model = url,
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(url)
+            .decoderFactory(SvgDecoder.Factory())
+            .crossfade(true)
+            .build(),
         contentDescription = competitionsName,
         modifier = Modifier.size(50.dp)
     )
@@ -278,7 +284,7 @@ fun MatchItem(match: MatchEntry) {
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TeamCrestImage(match.homeTeam.crest ?: "", match.homeTeam.name ?: "Unknown")
+                CrestAsyncImage(match.homeTeam.crest ?: "", match.homeTeam.name ?: "Unknown")
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(text = match.homeTeam.shortName ?: "", color = Color.White)
             }
@@ -290,20 +296,8 @@ fun MatchItem(match: MatchEntry) {
             ) {
                 Text(text = match.awayTeam.shortName ?: "", color = Color.White)
                 Spacer(modifier = Modifier.width(12.dp))
-                TeamCrestImage(match.awayTeam.crest ?: "", match.awayTeam.name ?: "Unknown")
+                CrestAsyncImage(match.awayTeam.crest ?: "", match.awayTeam.name ?: "Unknown")
             }
         }
     }
-}
-
-@Composable
-fun TeamCrestImage(
-    url: String,
-    teamName: String
-) {
-    AsyncImage(
-        model = url,
-        contentDescription = teamName,
-        modifier = Modifier.size(50.dp)
-    )
 }
