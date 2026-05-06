@@ -4,8 +4,7 @@ xmlns:app="http://schemas.android.com/apk/res-auto"
 xmlns:tools="http://schemas.android.com/tools"
 android:id="@+id/mobile_navigation"
 app:startDestination="@+id/navigation_home"
-android:label="PitchSide"
-    >
+android:label="PitchSide">
 <fragment
     android:id="@+id/navigation_home"
     android:name="com.example.pitchside.ui.home.HomeFragment"
@@ -31,8 +30,10 @@ android:label="PitchSide"
     android:name="com.example.pitchside.ui.details.CompetitionDetailsFragment">
     <argument
         android:name="competitionCode"
-        app:argType="string"
-        />
+        app:argType="string" />
 </fragment>
-
+    <fragment
+        android:id="@+id/accountFragment"
+        android:name="com.example.pitchside.ui.account.AccountFragment"
+        tools:layout="@layout/fragment_account" />
 </navigation>

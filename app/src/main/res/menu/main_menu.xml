@@ -6,4 +6,9 @@
         android:title="@string/title_login"
         app:showAsAction="always"
     />
+    <item
+        android:id="@+id/action_account"
+        android:title="Konto"
+        android:visible="false"
+        app:showAsAction="ifRoom" />
 </menu>
