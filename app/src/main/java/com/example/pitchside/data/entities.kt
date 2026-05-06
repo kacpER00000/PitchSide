@@ -127,6 +127,15 @@ data class LeagueScorer(
 data class Favorite(
     @PrimaryKey(autoGenerate = true) val ulubione_id: Int = 0,
     val uzytkownik_id: Int,
-    val typ_obiektu: String, // "LIGA", "DRUZYNA" lub "MECZ" <--- Dodajemy obsługę meczów
-    val obiekt_id: Int // Tutaj trafi mecz_id, liga_id lub druzyna_id
+    val typ_obiektu: String,
+    val obiekt_id: Int,
+    val nazwa_gospodarza: String? = null,
+    val skrot_gospodarza: String? = null, // NOWE
+    val herb_gospodarza: String? = null,  // NOWE
+    val nazwa_goscia: String? = null,
+    val skrot_goscia: String? = null,      // NOWE
+    val herb_goscia: String? = null,        // NOWE
+    val nazwa_ligi: String? = null,
+    val emblem_ligi: String? = null,
+    val kod_ligi: String? = null // DODAJ TO POLE
 )

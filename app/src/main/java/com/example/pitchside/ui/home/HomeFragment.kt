@@ -8,33 +8,15 @@ import com.example.pitchside.R
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -50,6 +32,7 @@ import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.example.pitchside.api.responses.CompetitionResponse
 import com.example.pitchside.api.responses.MatchEntry
+import com.example.pitchside.managers.SessionManager
 
 class HomeFragment : Fragment() {
 
@@ -65,7 +48,6 @@ class HomeFragment : Fragment() {
                 HomeScreen(
                     viewModel = viewModel,
                     onLeagueClick = { competitionCode:String ->
-
                         val bundle = Bundle().apply {
                             putString("competitionCode", competitionCode)
                         }
@@ -81,31 +63,48 @@ class HomeFragment : Fragment() {
 fun HomeScreen(viewModel: HomeViewModel, onLeagueClick: (String) -> Unit){
     val matches by viewModel.scheduled.observeAsState(emptyList())
     val competitions by viewModel.competitions.observeAsState(emptyList())
+    val favoriteIds by viewModel.favoriteIds.observeAsState(emptySet())
+    // DODANO: obserwowanie ulubionych lig
+    val favoriteLeagueIds by viewModel.favoriteLeagueIds.observeAsState(emptySet())
+
     val hasError by viewModel.error.observeAsState(false)
     val isFetching by viewModel.isFetching.observeAsState(false)
-    HomeScreenContent(matches,competitions,hasError,isFetching, onLeagueClick)
+
+    HomeScreenContent(
+        matches,
+        competitions,
+        favoriteIds,
+        favoriteLeagueIds, // DODANO
+        hasError,
+        isFetching,
+        onLeagueClick,
+        onFavoriteToggle = { match -> viewModel.toggleFavorite(match) },
+        onLeagueFavoriteToggle = { competition -> viewModel.toggleFavoriteLeague(competition) } // DODANO
+    )
 }
 
 @Composable
 fun HomeScreenContent(
     matches: List<MatchEntry>,
     competitions: List<CompetitionResponse>,
+    favoriteIds: Set<Int>,
+    favoriteLeagueIds: Set<Int>, // DODANO
     hasError: Boolean,
     isFetching: Boolean,
-    onLeagueClick: (String) -> Unit
+    onLeagueClick: (String) -> Unit,
+    onFavoriteToggle: (MatchEntry) -> Unit,
+    onLeagueFavoriteToggle: (CompetitionResponse) -> Unit // DODANO
 ){
     val context = LocalContext.current
     var competitionsExpanded by remember { mutableStateOf(false) }
     var matchesExpanded by remember { mutableStateOf(false) }
+
     LaunchedEffect(hasError) {
         if(hasError){
-            Toast.makeText(
-                context,
-                "Wystąpił błąd podczas pobierania danych.",
-                Toast.LENGTH_LONG
-            ).show()
+            Toast.makeText(context, "Wystąpił błąd podczas pobierania danych.", Toast.LENGTH_LONG).show()
         }
     }
+
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(5.dp)
@@ -114,7 +113,6 @@ fun HomeScreenContent(
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
-
             ) {
                 CircularProgressIndicator(
                     modifier = Modifier.width(64.dp),
@@ -123,6 +121,7 @@ fun HomeScreenContent(
                 )
             }
         } else {
+            // Nagłówek Ligi (Oryginalna struktura)
             Box(
                 modifier = Modifier.fillMaxWidth()
                     .height(51.dp)
@@ -158,9 +157,11 @@ fun HomeScreenContent(
                 Box(
                     modifier = Modifier.heightIn(max = 400.dp)
                 ){
-                    CompetitionsList(competitions, onLeagueClick)
+                    CompetitionsList(competitions, onLeagueClick, favoriteLeagueIds, onLeagueFavoriteToggle)
                 }
             }
+
+            // Nagłówek Mecze (Oryginalna struktura)
             Box(
                 modifier = Modifier.fillMaxWidth()
                     .height(51.dp)
@@ -168,35 +169,35 @@ fun HomeScreenContent(
                     .clickable { matchesExpanded = !matchesExpanded },
                 contentAlignment = Alignment.CenterStart,
             ){
-               Row(
-                   modifier = Modifier.fillMaxWidth(),
-                   horizontalArrangement = Arrangement.SpaceBetween,
-               ){
-                   Text(
-                       text = "Zaplanowane mecze",
-                       color = Color.White,
-                       modifier = Modifier.padding(start = 10.dp)
-                   )
-                   Box{
-                       if(!competitionsExpanded){
-                           Icon(
-                               painter = painterResource(R.drawable.outline_arrow_circle_down_24),
-                               contentDescription = "Expand"
-                           )
-                       } else {
-                           Icon(
-                               painter = painterResource(R.drawable.outline_arrow_circle_up_24),
-                               contentDescription = "Collapse"
-                           )
-                       }
-                   }
-               }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ){
+                    Text(
+                        text = "Zaplanowane mecze",
+                        color = Color.White,
+                        modifier = Modifier.padding(start = 10.dp)
+                    )
+                    Box{
+                        if(!matchesExpanded){
+                            Icon(
+                                painter = painterResource(R.drawable.outline_arrow_circle_down_24),
+                                contentDescription = "Expand"
+                            )
+                        } else {
+                            Icon(
+                                painter = painterResource(R.drawable.outline_arrow_circle_up_24),
+                                contentDescription = "Collapse"
+                            )
+                        }
+                    }
+                }
             }
             if(matchesExpanded){
                 Box(
                     modifier = Modifier.heightIn(max = 400.dp)
                 ){
-                    MatchesList(matches)
+                    MatchesList(matches, favoriteIds, onFavoriteToggle)
                 }
             }
         }
@@ -204,16 +205,31 @@ fun HomeScreenContent(
 }
 
 @Composable
-fun CompetitionsList(competitions: List<CompetitionResponse>, onLeagueClick: (String) -> Unit){
+fun CompetitionsList(
+    competitions: List<CompetitionResponse>,
+    onLeagueClick: (String) -> Unit,
+    favoriteLeagueIds: Set<Int>,
+    onLeagueFavoriteToggle: (CompetitionResponse) -> Unit
+){
     LazyColumn {
         items(competitions) {competition ->
-            CompetitionItem(competition, onLeagueClick)
+            CompetitionItem(
+                competition,
+                onLeagueClick,
+                favoriteLeagueIds.contains(competition.id),
+                onLeagueFavoriteToggle
+            )
         }
     }
 }
 
 @Composable
-fun CompetitionItem(competition: CompetitionResponse, onLeagueClick: (String) -> Unit){
+fun CompetitionItem(
+    competition: CompetitionResponse,
+    onLeagueClick: (String) -> Unit,
+    isFavorite: Boolean,
+    onFavoriteToggle: (CompetitionResponse) -> Unit
+){
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -229,15 +245,28 @@ fun CompetitionItem(competition: CompetitionResponse, onLeagueClick: (String) ->
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.SpaceBetween, // DODANO dla gwiazdki
             verticalAlignment = Alignment.CenterVertically,
         ){
-            CrestAsyncImage(competition.emblem ?: "",competition.name ?: "Unknown")
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = competition.name ?: "",
-                color = Color.White
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CrestAsyncImage(competition.emblem ?: "",competition.name ?: "Unknown")
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = competition.name ?: "",
+                    color = Color.White
+                )
+            }
+
+            // DODANO: Gwiazdka dla ligi
+            if (SessionManager.isLoggedIn()) {
+                IconButton(onClick = { onFavoriteToggle(competition) }) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                        contentDescription = "Ulubione",
+                        tint = if (isFavorite) Color.Yellow else Color.White
+                    )
+                }
+            }
         }
     }
 }
@@ -256,16 +285,21 @@ fun CrestAsyncImage(url: String, competitionsName: String){
 }
 
 @Composable
-fun MatchesList(matches: List<MatchEntry>){
+fun MatchesList(
+    matches: List<MatchEntry>,
+    favoriteIds: Set<Int>,
+    onFavoriteToggle: (MatchEntry) -> Unit
+) {
     LazyColumn {
-        items(matches){ match ->
-            MatchItem(match)
+        items(matches) { match ->
+            val isFav = match.id?.let { favoriteIds.contains(it) } ?: false
+            MatchItem(match, isFav, onFavoriteToggle)
         }
     }
 }
 
 @Composable
-fun MatchItem(match: MatchEntry) {
+fun MatchItem(match: MatchEntry, isFavorite: Boolean, onFavoriteToggle: (MatchEntry) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -297,6 +331,16 @@ fun MatchItem(match: MatchEntry) {
                 Text(text = match.awayTeam.shortName ?: "", color = Color.White)
                 Spacer(modifier = Modifier.width(12.dp))
                 CrestAsyncImage(match.awayTeam.crest ?: "", match.awayTeam.name ?: "Unknown")
+            }
+
+            if (SessionManager.isLoggedIn()) {
+                IconButton(onClick = { onFavoriteToggle(match) }) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                        contentDescription = "Ulubione",
+                        tint = if (isFavorite) Color.Yellow else Color.White
+                    )
+                }
             }
         }
     }
