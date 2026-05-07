@@ -1,6 +1,5 @@
 package com.example.pitchside.ui.details
 
-import android.R
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -23,10 +22,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -53,6 +57,7 @@ import com.example.pitchside.api.responses.MatchEntry
 import com.example.pitchside.api.responses.Standing
 import com.example.pitchside.api.responses.StandingResponse
 import com.example.pitchside.api.responses.Table
+import com.example.pitchside.managers.SessionManager
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.getValue
@@ -163,6 +168,19 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel) {
                         style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.weight(1f)
                     )
+
+                    // DODANO: Gwiazdka ulubionych (tylko dla zalogowanych)
+                    if (SessionManager.isLoggedIn()) {
+                        val isFavorite by viewModel.isFavorite.observeAsState(false)
+                        IconButton(onClick = { viewModel.toggleFavorite() }) {
+                            Icon(
+                                imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                                contentDescription = "Ulubiona liga",
+                                tint = if (isFavorite) Color.Yellow else Color.White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
                 }
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 8.dp),
