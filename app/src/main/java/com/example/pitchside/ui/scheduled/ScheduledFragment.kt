@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,11 +27,9 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.pitchside.api.responses.MatchEntry
-import com.example.pitchside.api.responses.TeamResponse
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,8 +39,10 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.navigation.fragment.findNavController
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
+import com.example.pitchside.R
 
 class ScheduledFragment : Fragment() {
 
@@ -54,26 +55,38 @@ class ScheduledFragment : Fragment() {
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
-                ScheduledScreen(viewModel)
+                ScheduledScreen(
+                    viewModel = viewModel,
+                    onMatchClick = { matchId ->
+                        val bundle = Bundle().apply {
+                            putInt("matchId", matchId)
+                        }
+                        findNavController().navigate(R.id.matchDetailsFragment, bundle)
+                    }
+                )
             }
         }
-
     }
 }
 
 @Composable
-fun ScheduledScreen(viewModel: ScheduledViewModel){
+fun ScheduledScreen(viewModel: ScheduledViewModel, onMatchClick: (Int) -> Unit) {
     val matches by viewModel.scheduled.observeAsState(emptyList())
     val hasError by viewModel.error.observeAsState(false)
     val isFetching by viewModel.isFetching.observeAsState(true)
-    ScheduledScreenContent(matches, hasError, isFetching)
+    ScheduledScreenContent(matches, hasError, isFetching, onMatchClick)
 }
 
 @Composable
-fun ScheduledScreenContent(matches: List<MatchEntry>, hasError: Boolean, isFetching: Boolean){
+fun ScheduledScreenContent(
+    matches: List<MatchEntry>,
+    hasError: Boolean,
+    isFetching: Boolean,
+    onMatchClick: (Int) -> Unit
+) {
     val context = LocalContext.current
     LaunchedEffect(hasError) {
-        if(hasError){
+        if (hasError) {
             Toast.makeText(
                 context,
                 "Wystąpił błąd podczas pobierania danych.",
@@ -83,7 +96,7 @@ fun ScheduledScreenContent(matches: List<MatchEntry>, hasError: Boolean, isFetch
     }
     Column(modifier = Modifier.fillMaxSize()) {
         ScheduledHeader()
-        if(isFetching){
+        if (isFetching) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -95,7 +108,7 @@ fun ScheduledScreenContent(matches: List<MatchEntry>, hasError: Boolean, isFetch
                 )
             }
         } else {
-            MatchesList(matches)
+            MatchesList(matches, onMatchClick)
         }
     }
 }
@@ -118,20 +131,23 @@ fun ScheduledHeader() {
 }
 
 @Composable
-fun MatchesList(matches: List<MatchEntry>){
+fun MatchesList(matches: List<MatchEntry>, onMatchClick: (Int) -> Unit) {
     LazyColumn {
-        items(matches){ match ->
-            MatchItem(match)
+        items(matches) { match ->
+            MatchItem(match, onMatchClick)
         }
     }
 }
 
 @Composable
-fun MatchItem(match: MatchEntry) {
+fun MatchItem(match: MatchEntry, onMatchClick: (Int) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(8.dp)
+            .clickable {
+                match.id?.let { id -> onMatchClick(id) }
+            },
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF8F8E8E)
         )
@@ -144,17 +160,24 @@ fun MatchItem(match: MatchEntry) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
             ) {
                 TeamCrestImage(match.homeTeam.crest ?: "", match.homeTeam.name ?: "Unknown")
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(text = match.homeTeam.shortName ?: "", color = Color.White)
             }
 
-            Text(text = "-", color = Color.White)
+            Text(
+                text = "-",
+                color = Color.White,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
 
             Row(
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier.weight(1f)
             ) {
                 Text(text = match.awayTeam.shortName ?: "", color = Color.White)
                 Spacer(modifier = Modifier.width(12.dp))
