@@ -4,13 +4,15 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.example.pitchside.R
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -23,12 +25,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.navigation.findNavController
+import androidx.navigation.fragment.findNavController
 import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
+import com.example.pitchside.R
 import com.example.pitchside.api.responses.CompetitionResponse
 import com.example.pitchside.api.responses.MatchEntry
+import com.example.pitchside.managers.SessionManager
 
 class HomeFragment : Fragment() {
 
@@ -43,13 +47,13 @@ class HomeFragment : Fragment() {
             setContent {
                 HomeScreen(
                     viewModel = viewModel,
-                    onLeagueClick = { competitionCode: String ->
+                    onLeagueClick = { competitionCode ->
                         val bundle = Bundle().apply {
                             putString("competitionCode", competitionCode)
                         }
                         findNavController().navigate(R.id.competitionDetailsFragment, bundle)
                     },
-                    onMatchClick = { matchId: Int ->
+                    onMatchClick = { matchId ->
                         val bundle = Bundle().apply {
                             putInt("matchId", matchId)
                         }
@@ -65,26 +69,44 @@ class HomeFragment : Fragment() {
 fun HomeScreen(viewModel: HomeViewModel, onLeagueClick: (String) -> Unit, onMatchClick: (Int) -> Unit) {
     val matches by viewModel.scheduled.observeAsState(emptyList())
     val competitions by viewModel.competitions.observeAsState(emptyList())
+    val favoriteIds by viewModel.favoriteIds.observeAsState(emptySet())
+    val favoriteLeagueIds by viewModel.favoriteLeagueIds.observeAsState(emptySet())
     val hasError by viewModel.error.observeAsState(false)
     val isFetching by viewModel.isFetching.observeAsState(false)
-    HomeScreenContent(matches, competitions, hasError, isFetching, onLeagueClick, onMatchClick)
+
+    HomeScreenContent(
+        matches = matches,
+        competitions = competitions,
+        favoriteIds = favoriteIds,
+        favoriteLeagueIds = favoriteLeagueIds,
+        hasError = hasError,
+        isFetching = isFetching,
+        onLeagueClick = onLeagueClick,
+        onMatchClick = onMatchClick, // DODANO przekazywanie
+        onFavoriteToggle = { match -> viewModel.toggleFavorite(match) },
+        onLeagueFavoriteToggle = { competition -> viewModel.toggleFavoriteLeague(competition) }
+    )
 }
 
 @Composable
 fun HomeScreenContent(
     matches: List<MatchEntry>,
     competitions: List<CompetitionResponse>,
+    favoriteIds: Set<Int>,
+    favoriteLeagueIds: Set<Int>,
     hasError: Boolean,
     isFetching: Boolean,
     onLeagueClick: (String) -> Unit,
-    onMatchClick: (Int) -> Unit
-) {
+    onMatchClick: (Int) -> Unit, // DODANO parametr
+    onFavoriteToggle: (MatchEntry) -> Unit,
+    onLeagueFavoriteToggle: (CompetitionResponse) -> Unit
+){
     val context = LocalContext.current
     var competitionsExpanded by remember { mutableStateOf(false) }
     var matchesExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(hasError) {
-        if (hasError) {
+        if(hasError){
             Toast.makeText(context, "Wystąpił błąd podczas pobierania danych.", Toast.LENGTH_LONG).show()
         }
     }
@@ -95,12 +117,10 @@ fun HomeScreenContent(
     ) {
         if (isFetching) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    modifier = Modifier.width(64.dp),
-                    color = MaterialTheme.colorScheme.secondary
-                )
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
             }
         } else {
+            // Nagłówek Ligi
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -110,10 +130,11 @@ fun HomeScreenContent(
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "Ligi", color = Color.White, modifier = Modifier.padding(start = 10.dp))
+                    Text(text = "Ligi", color = Color.White)
                     Icon(
                         painter = painterResource(
                             if (competitionsExpanded) R.drawable.outline_arrow_circle_up_24
@@ -127,10 +148,11 @@ fun HomeScreenContent(
 
             if (competitionsExpanded) {
                 Box(modifier = Modifier.heightIn(max = 300.dp)) {
-                    CompetitionsList(competitions, onLeagueClick)
+                    CompetitionsList(competitions, onLeagueClick, favoriteLeagueIds, onLeagueFavoriteToggle)
                 }
             }
 
+            // Nagłówek Mecze
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -138,12 +160,13 @@ fun HomeScreenContent(
                     .background(Color(0xFF595959))
                     .clickable { matchesExpanded = !matchesExpanded },
                 contentAlignment = Alignment.CenterStart,
-            ) {
+            ){
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(text = "Zaplanowane mecze", color = Color.White, modifier = Modifier.padding(start = 10.dp))
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    Text(text = "Zaplanowane mecze", color = Color.White)
                     Icon(
                         painter = painterResource(
                             if (matchesExpanded) R.drawable.outline_arrow_circle_up_24
@@ -154,10 +177,9 @@ fun HomeScreenContent(
                     )
                 }
             }
-
-            if (matchesExpanded) {
-                Box(modifier = Modifier.heightIn(max = 400.dp)) {
-                    MatchesList(matches, onMatchClick)
+            if(matchesExpanded){
+                Box(modifier = Modifier.heightIn(max = 400.dp)){
+                    MatchesList(matches, favoriteIds, onMatchClick, onFavoriteToggle) // PRZEKAZANO onMatchClick
                 }
             }
         }
@@ -165,16 +187,31 @@ fun HomeScreenContent(
 }
 
 @Composable
-fun CompetitionsList(competitions: List<CompetitionResponse>, onLeagueClick: (String) -> Unit) {
+fun CompetitionsList(
+    competitions: List<CompetitionResponse>,
+    onLeagueClick: (String) -> Unit,
+    favoriteLeagueIds: Set<Int>,
+    onLeagueFavoriteToggle: (CompetitionResponse) -> Unit
+) {
     LazyColumn {
         items(competitions) { competition ->
-            CompetitionItem(competition, onLeagueClick)
+            CompetitionItem(
+                competition,
+                onLeagueClick,
+                favoriteLeagueIds.contains(competition.id),
+                onLeagueFavoriteToggle
+            )
         }
     }
 }
 
 @Composable
-fun CompetitionItem(competition: CompetitionResponse, onLeagueClick: (String) -> Unit) {
+fun CompetitionItem(
+    competition: CompetitionResponse,
+    onLeagueClick: (String) -> Unit,
+    isFavorite: Boolean,
+    onFavoriteToggle: (CompetitionResponse) -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -187,43 +224,52 @@ fun CompetitionItem(competition: CompetitionResponse, onLeagueClick: (String) ->
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            CrestAsyncImage(competition.emblem ?: "", competition.name ?: "Unknown")
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(text = competition.name ?: "", color = Color.White)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CrestAsyncImage(competition.emblem ?: "", competition.name ?: "Unknown")
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(text = competition.name ?: "", color = Color.White)
+            }
+
+            if (SessionManager.isLoggedIn()) {
+                IconButton(onClick = { onFavoriteToggle(competition) }) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                        contentDescription = "Ulubione",
+                        tint = if (isFavorite) Color.Yellow else Color.White
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-fun CrestAsyncImage(url: String, competitionsName: String) {
-    AsyncImage(
-        model = ImageRequest.Builder(LocalContext.current)
-            .data(url)
-            .decoderFactory(SvgDecoder.Factory())
-            .crossfade(true)
-            .build(),
-        contentDescription = competitionsName,
-        modifier = Modifier.size(50.dp)
-    )
-}
-
-@Composable
-fun MatchesList(matches: List<MatchEntry>, onMatchClick: (Int) -> Unit) {
+fun MatchesList(
+    matches: List<MatchEntry>,
+    favoriteIds: Set<Int>,
+    onMatchClick: (Int) -> Unit, // DODANO
+    onFavoriteToggle: (MatchEntry) -> Unit
+) {
     LazyColumn {
         items(matches) { match ->
-            MatchItem(match, onMatchClick)
+            val isFav = match.id?.let { favoriteIds.contains(it) } ?: false
+            MatchItem(match, isFav, onMatchClick, onFavoriteToggle) // PRZEKAZANO onMatchClick
         }
     }
 }
 
 @Composable
-fun MatchItem(match: MatchEntry, onMatchClick: (Int) -> Unit) {
+fun MatchItem(
+    match: MatchEntry,
+    isFavorite: Boolean,
+    onMatchClick: (Int) -> Unit, // DODANO
+    onFavoriteToggle: (MatchEntry) -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
             .clickable {
-                // Bezpieczne wywołanie: wykonaj tylko jeśli id != null
                 match.id?.let { id -> onMatchClick(id) }
             },
         colors = CardDefaults.cardColors(containerColor = Color(0xFF8F8E8E))
@@ -233,17 +279,40 @@ fun MatchItem(match: MatchEntry, onMatchClick: (Int) -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                 CrestAsyncImage(match.homeTeam.crest ?: "", match.homeTeam.name ?: "Unknown")
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(text = match.homeTeam.shortName ?: "", color = Color.White)
             }
-            Text(text = "-", color = Color.White)
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(text = "-", color = Color.White, modifier = Modifier.padding(horizontal = 4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
                 Text(text = match.awayTeam.shortName ?: "", color = Color.White)
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 CrestAsyncImage(match.awayTeam.crest ?: "", match.awayTeam.name ?: "Unknown")
+            }
+
+            if (SessionManager.isLoggedIn()) {
+                IconButton(onClick = { onFavoriteToggle(match) }) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                        contentDescription = "Ulubione",
+                        tint = if (isFavorite) Color.Yellow else Color.White
+                    )
+                }
             }
         }
     }
+}
+
+@Composable
+fun CrestAsyncImage(url: String, contentDesc: String) {
+    AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(url)
+            .decoderFactory(SvgDecoder.Factory())
+            .crossfade(true)
+            .build(),
+        contentDescription = contentDesc,
+        modifier = Modifier.size(50.dp)
+    )
 }

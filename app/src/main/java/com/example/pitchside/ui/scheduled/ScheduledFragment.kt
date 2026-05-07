@@ -9,40 +9,30 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import com.example.pitchside.api.responses.MatchEntry
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
 import androidx.navigation.fragment.findNavController
+import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.example.pitchside.R
+import com.example.pitchside.api.responses.MatchEntry
+import com.example.pitchside.managers.SessionManager
 
 class ScheduledFragment : Fragment() {
 
@@ -72,43 +62,43 @@ class ScheduledFragment : Fragment() {
 @Composable
 fun ScheduledScreen(viewModel: ScheduledViewModel, onMatchClick: (Int) -> Unit) {
     val matches by viewModel.scheduled.observeAsState(emptyList())
+    val favoriteIds by viewModel.favoriteIds.observeAsState(emptySet())
     val hasError by viewModel.error.observeAsState(false)
     val isFetching by viewModel.isFetching.observeAsState(true)
-    ScheduledScreenContent(matches, hasError, isFetching, onMatchClick)
+
+    ScheduledScreenContent(
+        matches = matches,
+        favoriteIds = favoriteIds,
+        hasError = hasError,
+        isFetching = isFetching,
+        onMatchClick = onMatchClick,
+        onFavoriteToggle = { viewModel.toggleFavorite(it) }
+    )
 }
 
 @Composable
 fun ScheduledScreenContent(
     matches: List<MatchEntry>,
+    favoriteIds: Set<Int>,
     hasError: Boolean,
     isFetching: Boolean,
-    onMatchClick: (Int) -> Unit
+    onMatchClick: (Int) -> Unit,
+    onFavoriteToggle: (MatchEntry) -> Unit
 ) {
     val context = LocalContext.current
     LaunchedEffect(hasError) {
         if (hasError) {
-            Toast.makeText(
-                context,
-                "Wystąpił błąd podczas pobierania danych.",
-                Toast.LENGTH_LONG
-            ).show()
+            Toast.makeText(context, "Wystąpił błąd podczas pobierania danych.", Toast.LENGTH_LONG).show()
         }
     }
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().background(Color(0xFF121212))) {
         ScheduledHeader()
         if (isFetching) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.width(64.dp),
-                    color = MaterialTheme.colorScheme.secondary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                )
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
             }
         } else {
-            MatchesList(matches, onMatchClick)
+            MatchesList(matches, favoriteIds, onMatchClick, onFavoriteToggle)
         }
     }
 }
@@ -116,82 +106,83 @@ fun ScheduledScreenContent(
 @Composable
 fun ScheduledHeader() {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(51.dp)
-            .background(Color(0xFF595959)),
+        modifier = Modifier.fillMaxWidth().height(51.dp).background(Color(0xFF595959)),
         contentAlignment = Alignment.CenterStart
     ) {
         Text(
             text = "Zaplanowane mecze",
             color = Color.White,
-            modifier = Modifier.padding(start = 10.dp)
+            modifier = Modifier.padding(start = 16.dp),
+            fontWeight = FontWeight.Bold
         )
     }
 }
 
 @Composable
-fun MatchesList(matches: List<MatchEntry>, onMatchClick: (Int) -> Unit) {
-    LazyColumn {
+fun MatchesList(
+    matches: List<MatchEntry>,
+    favoriteIds: Set<Int>,
+    onMatchClick: (Int) -> Unit,
+    onFavoriteToggle: (MatchEntry) -> Unit
+) {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(matches) { match ->
-            MatchItem(match, onMatchClick)
+            val isFavorite = match.id?.let { favoriteIds.contains(it) } ?: false
+            MatchItem(match, isFavorite, onMatchClick, onFavoriteToggle)
         }
     }
 }
 
 @Composable
-fun MatchItem(match: MatchEntry, onMatchClick: (Int) -> Unit) {
+fun MatchItem(
+    match: MatchEntry,
+    isFavorite: Boolean,
+    onMatchClick: (Int) -> Unit,
+    onFavoriteToggle: (MatchEntry) -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
-            .clickable {
-                match.id?.let { id -> onMatchClick(id) }
-            },
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF8F8E8E)
-        )
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .clickable { match.id?.let { onMatchClick(it) } }, // Twoja nawigacja
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF8F8E8E))
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
-            ) {
+            // Home Team
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                 TeamCrestImage(match.homeTeam.crest ?: "", match.homeTeam.name ?: "Unknown")
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(text = match.homeTeam.shortName ?: "", color = Color.White)
+                Text(text = match.homeTeam.shortName ?: "", color = Color.White, fontSize = 14.sp)
             }
 
-            Text(
-                text = "-",
-                color = Color.White,
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
+            Text(text = "-", color = Color.White, modifier = Modifier.padding(horizontal = 8.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(text = match.awayTeam.shortName ?: "", color = Color.White)
+            // Away Team
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
+                Text(text = match.awayTeam.shortName ?: "", color = Color.White, fontSize = 14.sp)
                 Spacer(modifier = Modifier.width(12.dp))
                 TeamCrestImage(match.awayTeam.crest ?: "", match.awayTeam.name ?: "Unknown")
+            }
+
+            // Przycisk gwiazdki od kolegów
+            if (SessionManager.isLoggedIn()) {
+                IconButton(onClick = { onFavoriteToggle(match) }) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                        contentDescription = "Ulubione",
+                        tint = if (isFavorite) Color.Yellow else Color.White
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun TeamCrestImage(
-    url: String,
-    teamName: String
-) {
+fun TeamCrestImage(url: String, teamName: String) {
     AsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
             .data(url)
@@ -199,6 +190,6 @@ fun TeamCrestImage(
             .crossfade(true)
             .build(),
         contentDescription = teamName,
-        modifier = Modifier.size(50.dp)
+        modifier = Modifier.size(30.dp) // Zmniejszyłem trochę, żeby gwiazdka się mieściła
     )
 }

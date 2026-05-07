@@ -14,6 +14,22 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +51,7 @@ import com.example.pitchside.api.responses.MatchEntry
 import com.example.pitchside.api.responses.Standing
 import com.example.pitchside.api.responses.StandingResponse
 import com.example.pitchside.api.responses.Table
+import com.example.pitchside.managers.SessionManager
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
@@ -93,6 +110,46 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(text = standing?.competition?.name ?: "", color = Color.White, style = MaterialTheme.typography.headlineSmall)
                 }
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    thickness = 1.dp,
+                    color = Color.Gray
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CrestAsyncImage(
+                        standing?.competition?.emblem ?: "",
+                        standing?.competition?.name ?: "Unknown",
+                        50
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = standing?.competition?.name ?: "Unknown",
+                        color = Color.White,
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // DODANO: Gwiazdka ulubionych (tylko dla zalogowanych)
+                    if (SessionManager.isLoggedIn()) {
+                        val isFavorite by viewModel.isFavorite.observeAsState(false)
+                        IconButton(onClick = { viewModel.toggleFavorite() }) {
+                            Icon(
+                                imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                                contentDescription = "Ulubiona liga",
+                                tint = if (isFavorite) Color.Yellow else Color.White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    thickness = 1.dp,
+                    color = Color.Gray
+                )
             }
 
             TabRow(selectedTabIndex = selectedTabIndex, containerColor = Color(0xFF595959)) {

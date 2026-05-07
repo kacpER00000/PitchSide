@@ -11,12 +11,12 @@ import androidx.room.RoomDatabase
         User::class, League::class, Team::class, LeagueTable::class,
         Match::class, MatchEvent::class, LeagueScorer::class, Favorite::class
     ],
-    version = 2 // Zmiana numeru przy kazdej zmianie bazy danych
+    version = 6 // Zmiana numeru przy kazdej zmianie bazy danych
 )
 abstract class AppDatabase : RoomDatabase() {
     // Twoje abstrakcyjne metody do DAO (np. abstract fun userDao(): UserDao)
     abstract fun userDao(): UserDao // To pozwala nam używać metod z UserDao
-
+    abstract fun favoriteDao(): FavoriteDao
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null

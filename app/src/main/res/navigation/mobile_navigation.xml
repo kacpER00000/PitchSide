@@ -59,5 +59,8 @@
             android:name="matchId"
             app:argType="integer" />
     </fragment>
-
+    <fragment
+        android:id="@+id/navigation_favourite"
+        android:name="com.example.pitchside.ui.favourite.FavouriteFragment"
+        tools:layout="@layout/fragment_favourite" />
 </navigation>
