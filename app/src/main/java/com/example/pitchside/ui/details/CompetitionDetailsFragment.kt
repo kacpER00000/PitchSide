@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,9 +51,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
+import com.example.pitchside.R
 import com.example.pitchside.api.responses.MatchEntry
 import com.example.pitchside.api.responses.Standing
 import com.example.pitchside.api.responses.StandingResponse
@@ -75,14 +78,19 @@ class CompetitionDetailsFragment : Fragment() {
         viewModel.setCompetitionCode(competitionCode)
         viewModel.fetchAllData()
         return ComposeView(requireContext()).apply {
-            setContent { CompetitionDetailsScreen(viewModel) }
+            setContent { CompetitionDetailsScreen(viewModel, onMatchClick = { matchId ->
+                val bundle = Bundle().apply {
+                    putInt("matchId", matchId)
+                }
+                findNavController().navigate(R.id.matchDetailsFragment, bundle)
+            }) }
         }
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel) {
+fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClick: (Int) -> Unit) {
     val standing by viewModel.standings.observeAsState()
     val scheduled by viewModel.scheduledMatchesByMatchday.observeAsState()
     val finished by viewModel.finishedMatchesByMatchday.observeAsState()
@@ -206,9 +214,9 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel) {
             }
             Box(modifier = Modifier.fillMaxSize()) {
                 when (selectedTabIndex) {
-                    0 -> ScheduledMatchesContent(scheduled ?: emptyMap())
+                    0 -> ScheduledMatchesContent(scheduled ?: emptyMap(), onMatchClick)
                     1 -> CompetitionTableContent(standing ?: StandingResponse())
-                    2 -> ResultsContent(finished ?: emptyMap())
+                    2 -> ResultsContent(finished ?: emptyMap(), onMatchClick)
                 }
             }
         }
@@ -218,14 +226,14 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ScheduledMatchesContent(scheduled: Map<Int?, List<MatchEntry>?>) {
-    MatchesList(scheduled)
+fun ScheduledMatchesContent(scheduled: Map<Int?, List<MatchEntry>?>, onMatchClick: (Int) -> Unit) {
+    MatchesList(scheduled, onMatchClick)
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ResultsContent(finished: Map<Int?, List<MatchEntry>?>) {
-    MatchesList(finished)
+fun ResultsContent(finished: Map<Int?, List<MatchEntry>?>, onMatchClick: (Int) -> Unit) {
+    MatchesList(finished, onMatchClick)
 }
 
 @Composable
@@ -235,7 +243,7 @@ fun CompetitionTableContent(standing: StandingResponse) {
 
 @Composable
 @RequiresApi(Build.VERSION_CODES.O)
-fun MatchesList(finishedMatches: Map<Int?, List<MatchEntry>?>) {
+fun MatchesList(finishedMatches: Map<Int?, List<MatchEntry>?>, onMatchClick: (Int) -> Unit) {
     LazyColumn {
         finishedMatches.forEach { (matchday, matches) ->
             item {
@@ -260,7 +268,7 @@ fun MatchesList(finishedMatches: Map<Int?, List<MatchEntry>?>) {
             }
             if (matches != null) {
                 items(matches) { match ->
-                    MatchItem(match)
+                    MatchItem(match, onMatchClick)
                 }
             }
         }
@@ -269,11 +277,12 @@ fun MatchesList(finishedMatches: Map<Int?, List<MatchEntry>?>) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MatchItem(match: MatchEntry) {
+fun MatchItem(match: MatchEntry, onMatchClick: (Int) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .clickable{match.id?.let { id -> onMatchClick(id) }},
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF8F8E8E)
         )
