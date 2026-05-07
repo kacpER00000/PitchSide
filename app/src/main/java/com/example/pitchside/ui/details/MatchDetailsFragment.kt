@@ -6,6 +6,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -18,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import com.example.pitchside.managers.SessionManager
 import com.example.pitchside.ui.home.CrestAsyncImage
 
 class MatchDetailsFragment : Fragment() {
@@ -33,6 +37,7 @@ class MatchDetailsFragment : Fragment() {
             setContent {
                 val match by viewModel.match.observeAsState()
                 val isFetching by viewModel.isFetching.observeAsState(false)
+                val isFavorite by viewModel.isFavorite.observeAsState(false) // DODANO
 
                 LaunchedEffect(matchId) {
                     if (matchId != -1) {
@@ -52,12 +57,38 @@ class MatchDetailsFragment : Fragment() {
                                 modifier = Modifier.fillMaxSize().padding(24.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text(
-                                    text = m.competition?.name ?: "",
-                                    color = Color.LightGray,
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
+                                // Nagłówek z Ligą i Gwiazdką
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // Pusty spacer dla wycentrowania tekstu ligi (opcjonalnie)
+                                    Spacer(modifier = Modifier.width(48.dp))
+
+                                    Text(
+                                        text = m.competition?.name ?: "",
+                                        color = Color.LightGray,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.weight(1f),
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
+
+                                    // DODANO: Gwiazdka ulubionych
+                                    if (SessionManager.isLoggedIn()) {
+                                        IconButton(onClick = { viewModel.toggleFavorite() }) {
+                                            Icon(
+                                                imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                                                contentDescription = "Ulubiony mecz",
+                                                tint = if (isFavorite) Color.Yellow else Color.White,
+                                                modifier = Modifier.size(32.dp)
+                                            )
+                                        }
+                                    } else {
+                                        Spacer(modifier = Modifier.width(48.dp))
+                                    }
+                                }
 
                                 Spacer(modifier = Modifier.height(48.dp))
 

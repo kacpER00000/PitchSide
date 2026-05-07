@@ -85,7 +85,7 @@ fun LoginScreen(viewModel: LoginViewModel, onNavigateToHome: () -> Unit) {
         CustomTextField(
             value = nazwa,
             onValueChange = { nazwa = it },
-            label = if (isRegisterMode) "Nazwa użytkownika" else "Login"
+            label = if (isRegisterMode) "Nazwa użytkownika" else "Nazwa użytkownika"
         )
 
         // Pole EMAIL
@@ -125,7 +125,7 @@ fun LoginScreen(viewModel: LoginViewModel, onNavigateToHome: () -> Unit) {
         TextButton(onClick = { isRegisterMode = !isRegisterMode }) {
             Text(
                 text = if (isRegisterMode) "Masz już konto? Zaloguj się" else "Nie masz konta? Zarejestruj się",
-                color = Color.LightGray
+                color = Color.Black
             )
         }
     }

@@ -73,13 +73,7 @@ fun FavouriteScreen(
 ) {
     val favoriteMatches by viewModel.favoriteMatches.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFF121212)).padding(16.dp)) {
-        Text(
-            text = "Twoje Ulubione",
-            color = Color.White,
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+    Column(modifier = Modifier.fillMaxSize().background(Color.White).padding(16.dp)) {
 
         if (favoriteMatches.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -111,7 +105,7 @@ fun FavoriteItem(favorite: Favorite, onDelete: () -> Unit, onItemClick: () -> Un
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onItemClick() },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))
+        colors = CardDefaults.cardColors(containerColor = Color.Gray)
     ) {
         Row(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
