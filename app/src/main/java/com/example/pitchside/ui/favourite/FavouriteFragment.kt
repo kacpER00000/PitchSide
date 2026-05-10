@@ -29,6 +29,7 @@ import coil.request.ImageRequest
 import com.example.pitchside.R
 import com.example.pitchside.data.Favorite
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.navigation.fragment.findNavController
 
 class FavouriteFragment : Fragment() {
@@ -57,6 +58,10 @@ class FavouriteFragment : Fragment() {
                             putInt("matchId", matchId)
                         }
                         findNavController().navigate(R.id.matchDetailsFragment, bundle)
+                    },
+                    onLoginClick = {
+                        // Nawigacja do ekranu logowania
+                        findNavController().navigate(R.id.loginFragment)
                     }
                 )
             }
@@ -69,17 +74,39 @@ class FavouriteFragment : Fragment() {
 fun FavouriteScreen(
     viewModel: FavouriteViewModel,
     onLeagueClick: (String) -> Unit,
-    onMatchClick: (Int) -> Unit
+    onMatchClick: (Int) -> Unit,
+    onLoginClick: () -> Unit
 ) {
     val favoriteMatches by viewModel.favoriteMatches.collectAsState()
+    val isLoggedIn = viewModel.isLoggedIn()
 
     Column(modifier = Modifier.fillMaxSize().background(Color.White).padding(16.dp)) {
-
-        if (favoriteMatches.isEmpty()) {
+        // Logika wyświetlania zawartości
+        if (!isLoggedIn) {
+            // Przypadek: Użytkownik NIEZALOGOWANY
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        text = "Zaloguj się, aby móc dodawać mecze lub ligi do ulubionych.",
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = "Zaloguj się teraz",
+                        color = MaterialTheme.colorScheme.primary,
+                        textDecoration = TextDecoration.Underline,
+                        modifier = Modifier.clickable { onLoginClick() }
+                    )
+                }
+            }
+        } else if (favoriteMatches.isEmpty()) {
+            // Przypadek: Zalogowany, ale PUSTA LISTA
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(text = "Brak ulubionych.", color = Color.Gray)
             }
         } else {
+            // Przypadek: Zalogowany i MA ULUBIONE
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(favoriteMatches) { favorite ->
                     FavoriteItem(
@@ -101,6 +128,7 @@ fun FavouriteScreen(
 
 @Composable
 fun FavoriteItem(favorite: Favorite, onDelete: () -> Unit, onItemClick: () -> Unit) {
+    // Zachowałem Twoją kartę z szarym tłem i białym tekstem
     Card(
         modifier = Modifier
             .fillMaxWidth()

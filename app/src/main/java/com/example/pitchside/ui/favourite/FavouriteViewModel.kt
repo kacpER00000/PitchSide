@@ -15,11 +15,12 @@ class FavouriteViewModel(application: Application) : AndroidViewModel(applicatio
     private val dao = AppDatabase.getDatabase(application).favoriteDao()
     private val userId = SessionManager.loggedInUser?.uzytkownik_id ?: -1
 
-    // ZMIANA: Pobieramy wszystko (mecze i ligi)
+    // Funkcja sprawdzająca status logowania
+    fun isLoggedIn(): Boolean = SessionManager.isLoggedIn()
+
     val favoriteMatches: StateFlow<List<Favorite>> = dao.pobierzWszystkieUlubione(userId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // ZMIANA: Przyjmujemy cały obiekt Favorite, żeby wiedzieć, czy usunąć MECZ czy LIGĘ
     fun usunUlubione(favorite: Favorite) {
         viewModelScope.launch {
             dao.usunZUlubionych(userId, favorite.typ_obiektu, favorite.obiekt_id)
