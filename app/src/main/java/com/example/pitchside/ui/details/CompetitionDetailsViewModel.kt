@@ -8,6 +8,8 @@ import com.example.pitchside.api.dao.CompetitionAPI
 import com.example.pitchside.api.dao.MatchesAPI
 import com.example.pitchside.api.responses.MatchEntry
 import com.example.pitchside.api.responses.MatchResponse
+import com.example.pitchside.api.responses.ScorerEntry
+import com.example.pitchside.api.responses.ScorersResponse
 import com.example.pitchside.api.responses.StandingResponse
 import com.example.pitchside.data.AppDatabase
 import com.example.pitchside.data.Favorite
@@ -35,13 +37,14 @@ class CompetitionDetailsViewModel(application: Application) : AndroidViewModel(a
     private val _finishedMatchesByMatchday = MutableLiveData<SortedMap<Int, List<MatchEntry>>>()
     val finishedMatchesByMatchday = _finishedMatchesByMatchday
 
+    private val _scorers = MutableLiveData<List<ScorerEntry>>(emptyList())
+    val scorers = _scorers
+
     private val _error = MutableLiveData(false)
     val error = _error
 
     private val _isFetching = MutableLiveData(false)
     val isFetching = _isFetching
-
-    // Stan ulubionych
     private val _isFavorite = MutableLiveData(false)
     val isFavorite = _isFavorite
 
@@ -54,7 +57,6 @@ class CompetitionDetailsViewModel(application: Application) : AndroidViewModel(a
         observeFavoriteStatus()
     }
 
-    // Obserwujemy bazę danych, żeby gwiazdka reagowała na zmiany (np. usunięcie z Home)
     private fun observeFavoriteStatus() {
         val user = SessionManager.loggedInUser ?: return
         val code = competitionCode.value ?: return
@@ -100,19 +102,22 @@ class CompetitionDetailsViewModel(application: Application) : AndroidViewModel(a
                 val standingDeferred = async { competitionAPI.getStandingForCompetition(competitionCode.value!!) }
                 val scheduledDeferred = async { matchesAPI.getScheduledMatchesForCompetition(competitionCode.value!!) }
                 val finishedDeferred = async { matchesAPI.getFinishedMatchesForCompetition(competitionCode.value!!) }
+                val scorersDeferred = async {competitionAPI.getCompetitionTopScorers(competitionCode.value!!)}
 
-                val responses = awaitAll(standingDeferred, scheduledDeferred, finishedDeferred)
+                val responses = awaitAll(standingDeferred, scheduledDeferred, finishedDeferred,scorersDeferred)
 
                 val standingResponse = responses[0] as Response<StandingResponse>
                 val scheduledResponse = responses[1] as Response<MatchResponse>
                 val finishedResponse = responses[2] as Response<MatchResponse>
+                val scorersResponse = responses[3] as Response<ScorersResponse>
 
-                if (standingResponse.isSuccessful && scheduledResponse.isSuccessful && finishedResponse.isSuccessful) {
+                if (standingResponse.isSuccessful && scheduledResponse.isSuccessful && finishedResponse.isSuccessful && scorersResponse.isSuccessful) {
                     _standings.value = standingResponse.body()
                     _scheduled.value = scheduledResponse.body()?.matches
                     _finished.value = finishedResponse.body()?.matches?.reversed()
                     _currentMatchday.value = standingResponse.body()?.season?.currentMatchday
                     groupMatchesPerMatchday()
+                    _scorers.value = scorersResponse.body()?.scorers
                 } else {
                     _error.value = true
                 }

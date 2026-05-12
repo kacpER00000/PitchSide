@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
@@ -57,6 +58,7 @@ import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.example.pitchside.R
 import com.example.pitchside.api.responses.MatchEntry
+import com.example.pitchside.api.responses.ScorerEntry
 import com.example.pitchside.api.responses.Standing
 import com.example.pitchside.api.responses.StandingResponse
 import com.example.pitchside.api.responses.Table
@@ -94,10 +96,11 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
     val standing by viewModel.standings.observeAsState()
     val scheduled by viewModel.scheduledMatchesByMatchday.observeAsState()
     val finished by viewModel.finishedMatchesByMatchday.observeAsState()
+    val scorers by viewModel.scorers.observeAsState()
     val hasError by viewModel.error.observeAsState(false)
     val isFetching by viewModel.isFetching.observeAsState(false)
     val context = LocalContext.current
-    val tabs = listOf("Przyszłe mecze", "Tabela", "Wyniki")
+    val tabs = listOf("Przyszłe mecze", "Tabela", "Strzelcy","Wyniki")
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
@@ -216,7 +219,8 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
                 when (selectedTabIndex) {
                     0 -> ScheduledMatchesContent(scheduled ?: emptyMap(), onMatchClick)
                     1 -> CompetitionTableContent(standing ?: StandingResponse())
-                    2 -> ResultsContent(finished ?: emptyMap(), onMatchClick)
+                    2 -> TopScorersList(scorers ?: emptyList())
+                    3 -> ResultsContent(finished ?: emptyMap(), onMatchClick)
                 }
             }
         }
@@ -382,38 +386,38 @@ fun StandingList(groups: List<Standing>) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.wrapContentWidth()
+                    .padding(start = 10.dp)
             ) {
                 Text(
                     text = "#",
                     color = Color.White,
                     modifier = Modifier.width(24.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(18.dp))
                 Text(
                     text = "Drużyna",
                     color = Color.White,
-                    modifier = Modifier.width(50.dp)
+                    modifier = Modifier.width(60.dp)
                 )
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.wrapContentWidth()
+                    .padding(end=15.dp)
             ) {
                 Text(
                     text = "M",
                     color = Color.White
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(32.dp))
                 Text(
                     text = "B",
                     color = Color.White,
-                    modifier = Modifier.width(45.dp)
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(45.dp))
                 Text(
                     text = "P",
                     color = Color.White,
-                    style = MaterialTheme.typography.bodyLarge
                 )
             }
         }
@@ -493,7 +497,109 @@ fun StandingItem(tableEntry: Table) {
                 Text(
                     text = "${tableEntry.points}",
                     color = Color.White,
-                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun TopScorersList(scorers: List<ScorerEntry>) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.wrapContentWidth()
+                    .padding(start = 10.dp)
+            ) {
+                Text(
+                    text = "#",
+                    color = Color.White,
+                    modifier = Modifier.width(24.dp)
+                )
+                Spacer(modifier = Modifier.width(18.dp))
+                Text(
+                    text = "Zawodnik",
+                    color = Color.White,
+                    modifier = Modifier.width(60.dp)
+                )
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.wrapContentWidth()
+                    .padding(end = 13.dp)
+            ) {
+                Text(
+                    text = "B",
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.width(20.dp))
+                Text(
+                    text = "A",
+                    color = Color.White,
+                )
+            }
+        }
+        LazyColumn {
+            itemsIndexed(scorers) { index, scorerEntry ->
+                TopScorerItem(scorerEntry, position = index + 1)
+            }
+        }
+    }
+}
+
+@Composable
+fun TopScorerItem(scorerEntry: ScorerEntry, position: Int) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF8F8E8E)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.wrapContentWidth()
+            ) {
+                Text(
+                    text = "$position.",
+                    color = Color.White,
+                    modifier = Modifier.width(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                CrestAsyncImage(scorerEntry.team.crest ?: "", scorerEntry.team.name ?: "Unknown", 50)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = scorerEntry.player.name,
+                    color = Color.White
+                )
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.wrapContentWidth()
+            ) {
+                Text(
+                    text = scorerEntry.goals.toString(),
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = scorerEntry.assists.toString(),
+                    color = Color.White,
                 )
             }
         }
