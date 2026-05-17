@@ -1,8 +1,11 @@
 package com.example.pitchside.ui.home
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.pitchside.api.dao.CompetitionAPI
 import com.example.pitchside.api.dao.MatchesAPI
@@ -12,29 +15,34 @@ import com.example.pitchside.api.responses.MatchEntry
 import com.example.pitchside.api.responses.MatchResponse
 import com.example.pitchside.data.AppDatabase
 import com.example.pitchside.data.Favorite
+import com.example.pitchside.data.League
+import com.example.pitchside.data.Match
+import com.example.pitchside.data.MatchDao.ScheduledMatchWithTeams
 import com.example.pitchside.managers.RetrofitManager
 import com.example.pitchside.managers.SessionManager
+import com.example.pitchside.repositories.LeagueRepository
+import com.example.pitchside.repositories.MatchRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import retrofit2.Response
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val competitionAPI = RetrofitManager.create<CompetitionAPI>()
+    private val db = AppDatabase.getDatabase(application)
     private val matchesAPI = RetrofitManager.create<MatchesAPI>()
-    private val favoriteDao = AppDatabase.getDatabase(application).favoriteDao()
+    private val matchRepository = MatchRepository(db.matchDao(), db.teamDao(), matchesAPI)
+    private val competitionAPI = RetrofitManager.create<CompetitionAPI>()
+    private val leagueRepository = LeagueRepository(competitionAPI, db.leagueDao())
+    private val favoriteDao = db.favoriteDao()
 
-    private val _competitions = MutableLiveData<List<CompetitionResponse>>(emptyList())
-    val competitions = _competitions
-
-    private val _scheduled = MutableLiveData<List<MatchEntry>>(emptyList())
-    val scheduled = _scheduled
+    val competitions: LiveData<List<League>> = leagueRepository.getAllLeagues().asLiveData()
+    val scheduled: LiveData<List<ScheduledMatchWithTeams>> = matchRepository.getScheduledMatches().asLiveData()
 
     private val _favoriteIds = MutableLiveData<Set<Int>>(emptySet())
     val favoriteIds = _favoriteIds
 
-    // NOWE: ID ulubionych lig
     private val _favoriteLeagueIds = MutableLiveData<Set<Int>>(emptySet())
     val favoriteLeagueIds = _favoriteLeagueIds
 
@@ -49,20 +57,20 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         observeFavorites()
     }
 
+
     private fun observeFavorites() {
         val user = SessionManager.loggedInUser ?: return
         viewModelScope.launch {
             favoriteDao.pobierzWszystkieUlubione(user.uzytkownik_id).collect { list ->
-                // Rozdzielamy mecze od lig na dwie listy
                 _favoriteIds.postValue(list.filter { it.typ_obiektu == "MECZ" }.map { it.obiekt_id }.toSet())
                 _favoriteLeagueIds.postValue(list.filter { it.typ_obiektu == "LIGA" }.map { it.obiekt_id }.toSet())
             }
         }
     }
 
-    fun toggleFavorite(match: MatchEntry) {
+    fun toggleFavorite(match: ScheduledMatchWithTeams) {
         val user = SessionManager.loggedInUser ?: return
-        val matchId = match.id ?: return
+        val matchId = match.matchId ?: return
         viewModelScope.launch {
             val isFav = favoriteDao.czyUlubiony(user.uzytkownik_id, "MECZ", matchId)
             if (isFav) {
@@ -73,22 +81,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         uzytkownik_id = user.uzytkownik_id,
                         typ_obiektu = "MECZ",
                         obiekt_id = matchId,
-                        nazwa_gospodarza = match.homeTeam.name,
-                        skrot_gospodarza = match.homeTeam.shortName,
-                        herb_gospodarza = match.homeTeam.crest,
-                        nazwa_goscia = match.awayTeam.name,
-                        skrot_goscia = match.awayTeam.shortName,
-                        herb_goscia = match.awayTeam.crest
+                        nazwa_gospodarza = match.homeTeamName,
+                        skrot_gospodarza = match.homeTeamName,
+                        herb_gospodarza = match.homeTeamCrest,
+                        nazwa_goscia = match.awayTeamName,
+                        skrot_goscia = match.awayTeamName,
+                        herb_goscia = match.awayTeamCrest
                     )
                 )
             }
         }
     }
 
-    // NOWE: Obsługa ulubionej ligi
-    fun toggleFavoriteLeague(competition: CompetitionResponse) {
+    fun toggleFavoriteLeague(competition: League) {
         val user = SessionManager.loggedInUser ?: return
-        val leagueId = competition.id ?: return
+        val leagueId = competition.liga_id ?: return
 
         viewModelScope.launch {
             val isFav = favoriteDao.czyUlubiony(user.uzytkownik_id, "LIGA", leagueId)
@@ -100,9 +107,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         uzytkownik_id = user.uzytkownik_id,
                         typ_obiektu = "LIGA",
                         obiekt_id = leagueId,
-                        nazwa_ligi = competition.name,
-                        emblem_ligi = competition.emblem,
-                        kod_ligi = competition.code
+                        nazwa_ligi = competition.nazwa_ligi,
+                        emblem_ligi = competition.emblemat_ligi,
+                        kod_ligi = competition.kod_ligi
                     )
                 )
             }
@@ -114,18 +121,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             _isFetching.value = true
             _error.value = false
             try {
-                val compDef = async { competitionAPI.getAllCompetitions() }
-                val matchDef = async { matchesAPI.getScheduledMatches() }
-                val responses = awaitAll(compDef, matchDef)
-                val compRes = responses[0] as Response<CompetitionsResponse>
-                val matchRes = responses[1] as Response<MatchResponse>
-
-                if (compRes.isSuccessful && matchRes.isSuccessful) {
-                    _competitions.value = compRes.body()?.competitions
-                    _scheduled.value = matchRes.body()?.matches
-                } else { _error.value = true }
-            } catch (e: Exception) { _error.value = true }
-            finally { _isFetching.value = false }
+                if(scheduled.value.isNullOrEmpty()){
+                    matchRepository.refreshData()
+                }
+            } catch (e: Exception) {
+                Log.e("HOME_VM", "Błąd meczów: ${e.message}")
+                _error.value = true
+            } finally {
+                _isFetching.value = false
+            }
         }
     }
 }

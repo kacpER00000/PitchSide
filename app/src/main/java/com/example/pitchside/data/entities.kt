@@ -19,17 +19,21 @@ data class User(
 data class League(
     @PrimaryKey val liga_id: Int,
     val nazwa_ligi: String,
+    val kod_ligi: String?,
+    val emblemat_ligi: String?,
     val kraj: String?,
-    val kod_ligi: String?
+    val flaga_kraju: String?,
+
 )
 
 // 3. Drużyny
 @Entity(tableName = "Druzyny")
 data class Team(
     @PrimaryKey val druzyna_id: Int,
-    val pelna_nazwa: String,
+    val pelna_nazwa: String?,
     val skrocona_nazwa: String?,
-    val kod_druzyny: String?
+    val kod_druzyny: String?,
+    val logo: String?
 )
 
 // 4. Tabela Ligowa
@@ -68,11 +72,12 @@ data class Match(
     val liga_id: Int,
     val id_gospodarza: Int,
     val id_goscia: Int,
-    val data_meczu: String, // W Room daty najlepiej trzymać jako String lub Long
+    val data_meczu: String?,
     val status: String,
-    val wynik_gospodarz: Int = 0,
-    val wynik_gosc: Int = 0,
-    val kolejka: Int?
+    val wynik_gospodarz: Int?,
+    val wynik_gosc: Int?,
+    val kolejka: Int?,
+    val faza: String?
 )
 
 // 6. Wydarzenia Meczowe

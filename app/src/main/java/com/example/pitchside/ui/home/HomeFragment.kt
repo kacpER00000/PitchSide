@@ -32,6 +32,9 @@ import coil.request.ImageRequest
 import com.example.pitchside.R
 import com.example.pitchside.api.responses.CompetitionResponse
 import com.example.pitchside.api.responses.MatchEntry
+import com.example.pitchside.data.League
+import com.example.pitchside.data.Match
+import com.example.pitchside.data.MatchDao
 import com.example.pitchside.managers.SessionManager
 
 class HomeFragment : Fragment() {
@@ -82,7 +85,7 @@ fun HomeScreen(viewModel: HomeViewModel, onLeagueClick: (String) -> Unit, onMatc
         hasError = hasError,
         isFetching = isFetching,
         onLeagueClick = onLeagueClick,
-        onMatchClick = onMatchClick, // DODANO przekazywanie
+        onMatchClick = onMatchClick,
         onFavoriteToggle = { match -> viewModel.toggleFavorite(match) },
         onLeagueFavoriteToggle = { competition -> viewModel.toggleFavoriteLeague(competition) }
     )
@@ -90,16 +93,16 @@ fun HomeScreen(viewModel: HomeViewModel, onLeagueClick: (String) -> Unit, onMatc
 
 @Composable
 fun HomeScreenContent(
-    matches: List<MatchEntry>,
-    competitions: List<CompetitionResponse>,
+    matches: List<MatchDao.ScheduledMatchWithTeams>,
+    competitions: List<League>,
     favoriteIds: Set<Int>,
     favoriteLeagueIds: Set<Int>,
     hasError: Boolean,
     isFetching: Boolean,
     onLeagueClick: (String) -> Unit,
-    onMatchClick: (Int) -> Unit, // DODANO parametr
-    onFavoriteToggle: (MatchEntry) -> Unit,
-    onLeagueFavoriteToggle: (CompetitionResponse) -> Unit
+    onMatchClick: (Int) -> Unit,
+    onFavoriteToggle: (MatchDao.ScheduledMatchWithTeams) -> Unit,
+    onLeagueFavoriteToggle: (League) -> Unit
 ){
     val context = LocalContext.current
     var competitionsExpanded by remember { mutableStateOf(false) }
@@ -120,7 +123,6 @@ fun HomeScreenContent(
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
             }
         } else {
-            // Nagłówek Ligi
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -152,7 +154,6 @@ fun HomeScreenContent(
                 }
             }
 
-            // Nagłówek Mecze
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -179,7 +180,7 @@ fun HomeScreenContent(
             }
             if(matchesExpanded){
                 Box(modifier = Modifier.heightIn(max = 400.dp)){
-                    MatchesList(matches, favoriteIds, onMatchClick, onFavoriteToggle) // PRZEKAZANO onMatchClick
+                    MatchesList(matches, favoriteIds, onMatchClick, onFavoriteToggle)
                 }
             }
         }
@@ -188,17 +189,17 @@ fun HomeScreenContent(
 
 @Composable
 fun CompetitionsList(
-    competitions: List<CompetitionResponse>,
+    competitions: List<League>,
     onLeagueClick: (String) -> Unit,
     favoriteLeagueIds: Set<Int>,
-    onLeagueFavoriteToggle: (CompetitionResponse) -> Unit
+    onLeagueFavoriteToggle: (League) -> Unit
 ) {
     LazyColumn {
         items(competitions) { competition ->
             CompetitionItem(
                 competition,
                 onLeagueClick,
-                favoriteLeagueIds.contains(competition.id),
+                favoriteLeagueIds.contains(competition.liga_id),
                 onLeagueFavoriteToggle
             )
         }
@@ -207,16 +208,16 @@ fun CompetitionsList(
 
 @Composable
 fun CompetitionItem(
-    competition: CompetitionResponse,
+    competition: League,
     onLeagueClick: (String) -> Unit,
     isFavorite: Boolean,
-    onFavoriteToggle: (CompetitionResponse) -> Unit
+    onFavoriteToggle: (League) -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .clickable { competition.code?.let { onLeagueClick(it) } },
+            .clickable { competition.kod_ligi?.let { onLeagueClick(it) } },
         colors = CardDefaults.cardColors(containerColor = Color(0xFF8F8E8E))
     ) {
         Row(
@@ -225,9 +226,9 @@ fun CompetitionItem(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CrestAsyncImage(competition.emblem ?: "", competition.name ?: "Unknown")
+                CrestAsyncImage(competition.emblemat_ligi ?: "", competition.nazwa_ligi ?: "Unknown")
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(text = competition.name ?: "", color = Color.White)
+                Text(text = competition.nazwa_ligi ?: "", color = Color.White)
             }
 
             if (SessionManager.isLoggedIn()) {
@@ -245,32 +246,32 @@ fun CompetitionItem(
 
 @Composable
 fun MatchesList(
-    matches: List<MatchEntry>,
+    matches: List<MatchDao.ScheduledMatchWithTeams>,
     favoriteIds: Set<Int>,
-    onMatchClick: (Int) -> Unit, // DODANO
-    onFavoriteToggle: (MatchEntry) -> Unit
+    onMatchClick: (Int) -> Unit,
+    onFavoriteToggle: (MatchDao.ScheduledMatchWithTeams) -> Unit
 ) {
     LazyColumn {
         items(matches) { match ->
-            val isFav = match.id?.let { favoriteIds.contains(it) } ?: false
-            MatchItem(match, isFav, onMatchClick, onFavoriteToggle) // PRZEKAZANO onMatchClick
+            val isFav = match.matchId?.let { favoriteIds.contains(it) } ?: false
+            MatchItem(match, isFav, onMatchClick, onFavoriteToggle)
         }
     }
 }
 
 @Composable
 fun MatchItem(
-    match: MatchEntry,
+    match: MatchDao.ScheduledMatchWithTeams,
     isFavorite: Boolean,
-    onMatchClick: (Int) -> Unit, // DODANO
-    onFavoriteToggle: (MatchEntry) -> Unit
+    onMatchClick: (Int) -> Unit,
+    onFavoriteToggle: (MatchDao.ScheduledMatchWithTeams) -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
             .clickable {
-                match.id?.let { id -> onMatchClick(id) }
+                match.matchId?.let { id -> onMatchClick(id) }
             },
         colors = CardDefaults.cardColors(containerColor = Color(0xFF8F8E8E))
     ) {
@@ -280,15 +281,15 @@ fun MatchItem(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                CrestAsyncImage(match.homeTeam.crest ?: "", match.homeTeam.name ?: "Unknown")
+                CrestAsyncImage(match.homeTeamCrest ?: "", match.homeTeamName ?: "Unknown")
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = match.homeTeam.shortName ?: "", color = Color.White)
+                Text(text = match.homeTeamName ?: "", color = Color.White)
             }
             Text(text = "-", color = Color.White, modifier = Modifier.padding(horizontal = 4.dp))
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
-                Text(text = match.awayTeam.shortName ?: "", color = Color.White)
+                Text(text = match.awayTeamName ?: "", color = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
-                CrestAsyncImage(match.awayTeam.crest ?: "", match.awayTeam.name ?: "Unknown")
+                CrestAsyncImage(match.awayTeamCrest ?: "", match.awayTeamName ?: "Unknown")
             }
 
             if (SessionManager.isLoggedIn()) {
