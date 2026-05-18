@@ -25,14 +25,14 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.fragment.findNavController
 import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.example.pitchside.R
-import com.example.pitchside.api.responses.MatchEntry
+import com.example.pitchside.data.MatchDao
 import com.example.pitchside.managers.SessionManager
+import com.example.pitchside.ui.home.CrestAsyncImage
 
 class ScheduledFragment : Fragment() {
 
@@ -78,12 +78,12 @@ fun ScheduledScreen(viewModel: ScheduledViewModel, onMatchClick: (Int) -> Unit) 
 
 @Composable
 fun ScheduledScreenContent(
-    matches: List<MatchEntry>,
+    matches: List<MatchDao.MatchWithTeams>,
     favoriteIds: Set<Int>,
     hasError: Boolean,
     isFetching: Boolean,
     onMatchClick: (Int) -> Unit,
-    onFavoriteToggle: (MatchEntry) -> Unit
+    onFavoriteToggle: (MatchDao.MatchWithTeams) -> Unit
 ) {
     val context = LocalContext.current
     LaunchedEffect(hasError) {
@@ -120,54 +120,52 @@ fun ScheduledHeader() {
 
 @Composable
 fun MatchesList(
-    matches: List<MatchEntry>,
+    matches: List<MatchDao.MatchWithTeams>,
     favoriteIds: Set<Int>,
     onMatchClick: (Int) -> Unit,
-    onFavoriteToggle: (MatchEntry) -> Unit
+    onFavoriteToggle: (MatchDao.MatchWithTeams) -> Unit
 ) {
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn {
         items(matches) { match ->
-            val isFavorite = match.id?.let { favoriteIds.contains(it) } ?: false
-            MatchItem(match, isFavorite, onMatchClick, onFavoriteToggle)
+            val isFav = match.matchId?.let { favoriteIds.contains(it) } ?: false
+            MatchItem(match, isFav, onMatchClick, onFavoriteToggle)
         }
     }
 }
 
 @Composable
 fun MatchItem(
-    match: MatchEntry,
+    match: MatchDao.MatchWithTeams,
     isFavorite: Boolean,
     onMatchClick: (Int) -> Unit,
-    onFavoriteToggle: (MatchEntry) -> Unit
+    onFavoriteToggle: (MatchDao.MatchWithTeams) -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-            .clickable { match.id?.let { onMatchClick(it) } }, // Twoja nawigacja
+            .padding(8.dp)
+            .clickable {
+                match.matchId?.let { id -> onMatchClick(id) }
+            },
         colors = CardDefaults.cardColors(containerColor = Color(0xFF8F8E8E))
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Home Team
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                TeamCrestImage(match.homeTeam.crest ?: "", match.homeTeam.name ?: "Unknown")
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(text = match.homeTeam.shortName ?: "", color = Color.White, fontSize = 14.sp)
+                CrestAsyncImage(match.homeTeamCrest ?: "", match.homeTeamName ?: "Unknown")
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = match.homeTeamName ?: "", color = Color.White)
             }
-
-            Text(text = "-", color = Color.White, modifier = Modifier.padding(horizontal = 8.dp))
-
-            // Away Team
+            Text(text = "-", color = Color.White, modifier = Modifier.padding(horizontal = 4.dp))
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
-                Text(text = match.awayTeam.shortName ?: "", color = Color.White, fontSize = 14.sp)
-                Spacer(modifier = Modifier.width(12.dp))
-                TeamCrestImage(match.awayTeam.crest ?: "", match.awayTeam.name ?: "Unknown")
+                Text(text = match.awayTeamName ?: "", color = Color.White)
+                Spacer(modifier = Modifier.width(8.dp))
+                CrestAsyncImage(match.awayTeamCrest ?: "", match.awayTeamName ?: "Unknown")
             }
 
-            // Przycisk gwiazdki od kolegów
             if (SessionManager.isLoggedIn()) {
                 IconButton(onClick = { onFavoriteToggle(match) }) {
                     Icon(

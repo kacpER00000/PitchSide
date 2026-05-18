@@ -57,11 +57,9 @@ import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.example.pitchside.R
-import com.example.pitchside.api.responses.MatchEntry
-import com.example.pitchside.api.responses.ScorerEntry
-import com.example.pitchside.api.responses.Standing
-import com.example.pitchside.api.responses.StandingResponse
-import com.example.pitchside.api.responses.Table
+import com.example.pitchside.data.LeagueScorerDao
+import com.example.pitchside.data.LeagueTableDao
+import com.example.pitchside.data.MatchDao
 import com.example.pitchside.managers.SessionManager
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
@@ -78,7 +76,7 @@ class CompetitionDetailsFragment : Fragment() {
     ): View {
         val competitionCode = arguments?.getString("competitionCode") ?: "Unknown"
         viewModel.setCompetitionCode(competitionCode)
-        viewModel.fetchAllData()
+        viewModel.fetchData()
         return ComposeView(requireContext()).apply {
             setContent { CompetitionDetailsScreen(viewModel, onMatchClick = { matchId ->
                 val bundle = Bundle().apply {
@@ -93,7 +91,8 @@ class CompetitionDetailsFragment : Fragment() {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClick: (Int) -> Unit) {
-    val standing by viewModel.standings.observeAsState()
+    val leagueInfo by viewModel.leagueInfo.observeAsState()
+    val standing by viewModel.standingsByGroups.observeAsState()
     val scheduled by viewModel.scheduledMatchesByMatchday.observeAsState()
     val finished by viewModel.finishedMatchesByMatchday.observeAsState()
     val scorers by viewModel.scorers.observeAsState()
@@ -141,19 +140,19 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val flagModel = if (standing?.area?.flag.isNullOrBlank()) {
+                    val flagModel = if (leagueInfo?.flaga_kraju.isNullOrBlank()) {
                         "https://publicdomainvectors.org/photos/Anonymous_Flag_of_the_United_Nations.png"
                     } else {
-                        standing?.area?.flag
+                        leagueInfo?.flaga_kraju
                     }
                     CrestAsyncImage(
                         flagModel.toString(),
-                        standing?.area?.name ?: "Unknown",
+                        leagueInfo?.kraj ?: "Unknown",
                         50
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = standing?.area?.name ?: "Unknown",
+                        text = leagueInfo?.kraj ?: "Unknown",
                         color = Color.White.copy(alpha = 0.8f),
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -168,13 +167,13 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     CrestAsyncImage(
-                        standing?.competition?.emblem ?: "",
-                        standing?.competition?.name ?: "Unknown",
+                        leagueInfo?.emblemat_ligi ?: "",
+                        leagueInfo?.nazwa_ligi ?: "Unknown",
                         50
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = standing?.competition?.name ?: "Unknown",
+                        text = leagueInfo?.nazwa_ligi ?: "Unknown",
                         color = Color.White,
                         style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.weight(1f)
@@ -218,7 +217,7 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
             Box(modifier = Modifier.fillMaxSize()) {
                 when (selectedTabIndex) {
                     0 -> ScheduledMatchesContent(scheduled ?: emptyMap(), onMatchClick)
-                    1 -> CompetitionTableContent(standing ?: StandingResponse())
+                    1 -> CompetitionTableContent(standing ?: emptyMap())
                     2 -> TopScorersList(scorers ?: emptyList())
                     3 -> ResultsContent(finished ?: emptyMap(), onMatchClick)
                 }
@@ -230,24 +229,24 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ScheduledMatchesContent(scheduled: Map<Int?, List<MatchEntry>?>, onMatchClick: (Int) -> Unit) {
+fun ScheduledMatchesContent(scheduled: Map<Int?, List<MatchDao.MatchWithTeams>?>, onMatchClick: (Int) -> Unit) {
     MatchesList(scheduled, onMatchClick)
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ResultsContent(finished: Map<Int?, List<MatchEntry>?>, onMatchClick: (Int) -> Unit) {
+fun ResultsContent(finished: Map<Int?, List<MatchDao.MatchWithTeams>?>, onMatchClick: (Int) -> Unit) {
     MatchesList(finished, onMatchClick)
 }
 
 @Composable
-fun CompetitionTableContent(standing: StandingResponse) {
-    StandingList(standing.standings)
+fun CompetitionTableContent(standing: Map<String, List<LeagueTableDao.LeagueTableWithTeam>>) {
+    StandingList(standing)
 }
 
 @Composable
 @RequiresApi(Build.VERSION_CODES.O)
-fun MatchesList(finishedMatches: Map<Int?, List<MatchEntry>?>, onMatchClick: (Int) -> Unit) {
+fun MatchesList(finishedMatches: Map<Int?, List<MatchDao.MatchWithTeams>?>, onMatchClick: (Int) -> Unit) {
     LazyColumn {
         finishedMatches.forEach { (matchday, matches) ->
             item {
@@ -263,7 +262,7 @@ fun MatchesList(finishedMatches: Map<Int?, List<MatchEntry>?>, onMatchClick: (In
                             100 -> "Finał"
                             99 -> "Półfinał"
                             98 -> "Ćwierćfinał"
-                            else -> "Kolejka ${matchday}"
+                            else -> "Kolejka $matchday"
                         },
                         color = Color.White,
                         modifier = Modifier.padding(start = 10.dp)
@@ -281,12 +280,12 @@ fun MatchesList(finishedMatches: Map<Int?, List<MatchEntry>?>, onMatchClick: (In
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MatchItem(match: MatchEntry, onMatchClick: (Int) -> Unit) {
+fun MatchItem(match: MatchDao.MatchWithTeams, onMatchClick: (Int) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp)
-            .clickable{match.id?.let { id -> onMatchClick(id) }},
+            .clickable{ onMatchClick(match.matchId) },
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF8F8E8E)
         )
@@ -302,10 +301,10 @@ fun MatchItem(match: MatchEntry, onMatchClick: (Int) -> Unit) {
                 modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                CrestAsyncImage(match.homeTeam.crest ?: "", match.homeTeam.name ?: "Unknown", 35)
+                CrestAsyncImage(match.homeTeamCrest ?: "", match.homeTeamName ?: "Unknown", 35)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = match.homeTeam.shortName ?: "",
+                    text = match.homeTeamName ?: "",
                     color = Color.White,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1
@@ -321,8 +320,8 @@ fun MatchItem(match: MatchEntry, onMatchClick: (Int) -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    val homeScore = match.score?.fullTime?.home
-                    val awayScore = match.score?.fullTime?.away
+                    val homeScore = match.homeTeamScore
+                    val awayScore = match.awayTeamScore
 
                     if (homeScore != null && awayScore != null) {
                         Text(
@@ -338,8 +337,8 @@ fun MatchItem(match: MatchEntry, onMatchClick: (Int) -> Unit) {
                         )
                     }
                 }
-                if (match.utcDate != null) {
-                    val parsedDate = OffsetDateTime.parse(match.utcDate)
+                if (match.startDate != null) {
+                    val parsedDate = OffsetDateTime.parse(match.startDate)
                     val date = parsedDate.format(DateTimeFormatter.ofPattern("dd.MM"))
                     val hour = parsedDate.format(DateTimeFormatter.ofPattern("HH:mm"))
 
@@ -361,20 +360,20 @@ fun MatchItem(match: MatchEntry, onMatchClick: (Int) -> Unit) {
                 horizontalArrangement = Arrangement.End
             ) {
                 Text(
-                    text = match.awayTeam.shortName ?: "",
+                    text = match.awayTeamName ?: "",
                     color = Color.White,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                CrestAsyncImage(match.awayTeam.crest ?: "", match.awayTeam.name ?: "Unknown", 35)
+                CrestAsyncImage(match.awayTeamCrest ?: "", match.awayTeamName ?: "Unknown", 35)
             }
         }
     }
 }
 
 @Composable
-fun StandingList(groups: List<Standing>) {
+fun StandingList(standing: Map<String, List<LeagueTableDao.LeagueTableWithTeam>>) {
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
@@ -422,7 +421,7 @@ fun StandingList(groups: List<Standing>) {
             }
         }
         LazyColumn {
-            groups.forEach { groupEntry ->
+            standing.forEach { groupEntry ->
                 item {
                     Box(
                         modifier = Modifier
@@ -431,13 +430,13 @@ fun StandingList(groups: List<Standing>) {
                             .padding(vertical = 8.dp, horizontal = 16.dp)
                     ) {
                         Text(
-                            text = groupEntry.group ?: "Tabela",
+                            text = groupEntry.key,
                             color = Color.White,
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
                 }
-                items(groupEntry.table) { tableEntry ->
+                items(groupEntry.value) { tableEntry ->
                     StandingItem(tableEntry)
                 }
             }
@@ -446,7 +445,7 @@ fun StandingList(groups: List<Standing>) {
 }
 
 @Composable
-fun StandingItem(tableEntry: Table) {
+fun StandingItem(tableEntry: LeagueTableDao.LeagueTableWithTeam) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -472,10 +471,10 @@ fun StandingItem(tableEntry: Table) {
                     modifier = Modifier.width(24.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                CrestAsyncImage(tableEntry.team.crest ?: "", tableEntry.team.name ?: "Unknown", 50)
+                CrestAsyncImage(tableEntry.teamEmblem ?: "", tableEntry.teamName ?: "Unknown", 50)
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = tableEntry.team.shortName ?: "",
+                    text = tableEntry.teamName ?: "",
                     color = Color.White
                 )
             }
@@ -484,7 +483,7 @@ fun StandingItem(tableEntry: Table) {
                 modifier = Modifier.wrapContentWidth()
             ) {
                 Text(
-                    text = tableEntry.playedGames.toString(),
+                    text = tableEntry.playedMatches.toString(),
                     color = Color.White
                 )
                 Spacer(modifier = Modifier.width(16.dp))
@@ -504,7 +503,7 @@ fun StandingItem(tableEntry: Table) {
 }
 
 @Composable
-fun TopScorersList(scorers: List<ScorerEntry>) {
+fun TopScorersList(scorers: List<LeagueScorerDao.LeagueScorerWithTeam>) {
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
@@ -555,7 +554,7 @@ fun TopScorersList(scorers: List<ScorerEntry>) {
 }
 
 @Composable
-fun TopScorerItem(scorerEntry: ScorerEntry, position: Int) {
+fun TopScorerItem(scorerEntry: LeagueScorerDao.LeagueScorerWithTeam, position: Int) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -581,10 +580,10 @@ fun TopScorerItem(scorerEntry: ScorerEntry, position: Int) {
                     modifier = Modifier.width(24.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                CrestAsyncImage(scorerEntry.team.crest ?: "", scorerEntry.team.name ?: "Unknown", 50)
+                CrestAsyncImage(scorerEntry.teamEmblem ?: "", scorerEntry.teamName ?: "Unknown", 50)
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = scorerEntry.player.name,
+                    text = scorerEntry.playerName,
                     color = Color.White
                 )
             }

@@ -12,6 +12,9 @@ interface LeagueDao {
     @Insert(onConflict = REPLACE)
     suspend fun insertLeagues(leagues: List<League>)
 
+    @Query("SELECT * FROM Ligi WHERE kod_ligi = :code LIMIT 1")
+    fun getLeagueByCode(code: String): Flow<League>
+
     @Query("SELECT * FROM Ligi")
     fun getAllLeagues(): Flow<List<League>>
 

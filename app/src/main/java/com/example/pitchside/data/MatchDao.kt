@@ -1,44 +1,73 @@
 package com.example.pitchside.data
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MatchDao{
-    data class ScheduledMatchWithTeams(
+    data class MatchWithTeams(
         val matchId: Int,
         val startDate: String?,
+        val stage: String?,
+        val matchday: Int,
         val homeTeamName: String?,
         val homeTeamCrest: String?,
         val awayTeamName: String?,
-        val awayTeamCrest: String?
+        val awayTeamCrest: String?,
+        val homeTeamScore: Int?,
+        val awayTeamScore: Int?
     )
     @Upsert
     suspend fun insertMatches(matches: List<Match>)
 
-    @Query("SELECT * FROM Mecze WHERE status = :status AND liga_id = :leagueId")
-    fun getMatchesByLeagueAndStatus(status: String,leagueId: Int): Flow<List<Match>>
 
     @Query("""
     SELECT 
         m.mecz_id AS matchId, 
         m.data_meczu AS startDate,
+        m.faza as stage,
+        m.kolejka as matchday,
         COALESCE(gospodarz.skrocona_nazwa, gospodarz.pelna_nazwa) AS homeTeamName,
         gospodarz.logo AS homeTeamCrest,
         COALESCE(gosc.skrocona_nazwa, gosc.pelna_nazwa) AS awayTeamName,
-        gosc.logo AS awayTeamCrest
+        gosc.logo AS awayTeamCrest,
+        m.wynik_gospodarz AS homeTeamScore,
+        m.wynik_gosc AS awayTeamScore
         
     FROM Mecze m
     INNER JOIN Druzyny gospodarz ON m.id_gospodarza = gospodarz.druzyna_id
     INNER JOIN Druzyny gosc ON m.id_goscia = gosc.druzyna_id
-    WHERE m.status IN ('TIMED')
+    WHERE m.status = :status AND m.kod_ligi = :leagueCode AND m.id_gospodarza != 0 AND m.id_goscia != 0
     ORDER BY m.data_meczu ASC
 """)
-    fun getScheduledMatchesWithTeams(): Flow<List<ScheduledMatchWithTeams>>
+    fun getStatusMatchesWithTeamsForLeague(status: String, leagueCode: String): Flow<List<MatchWithTeams>>
+
+    @Query("""
+    SELECT 
+        m.mecz_id AS matchId, 
+        m.data_meczu AS startDate,
+        m.faza as stage,
+        m.kolejka as matchday,
+        COALESCE(gospodarz.skrocona_nazwa, gospodarz.pelna_nazwa) AS homeTeamName,
+        gospodarz.logo AS homeTeamCrest,
+        COALESCE(gosc.skrocona_nazwa, gosc.pelna_nazwa) AS awayTeamName,
+        gosc.logo AS awayTeamCrest,
+        m.wynik_gospodarz AS homeTeamScore,
+        m.wynik_gosc AS awayTeamScore
+        
+    FROM Mecze m
+    INNER JOIN Druzyny gospodarz ON m.id_gospodarza = gospodarz.druzyna_id
+    INNER JOIN Druzyny gosc ON m.id_goscia = gosc.druzyna_id
+    WHERE m.status = :status AND m.id_gospodarza != 0 AND m.id_goscia != 0
+    ORDER BY m.data_meczu ASC
+""")
+    fun getStatusMatchesWithTeams(status: String): Flow<List<MatchWithTeams>>
 
     @Query("DELETE FROM Mecze")
     suspend fun truncateMatches()
+
+    @Query("DELETE FROM Mecze WHERE kod_ligi = :leagueCode AND status = :status")
+    suspend fun truncateStatusMatchesForLeague(leagueCode: String, status: String)
 }

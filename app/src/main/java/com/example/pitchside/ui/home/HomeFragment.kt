@@ -30,10 +30,7 @@ import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.example.pitchside.R
-import com.example.pitchside.api.responses.CompetitionResponse
-import com.example.pitchside.api.responses.MatchEntry
 import com.example.pitchside.data.League
-import com.example.pitchside.data.Match
 import com.example.pitchside.data.MatchDao
 import com.example.pitchside.managers.SessionManager
 
@@ -93,7 +90,7 @@ fun HomeScreen(viewModel: HomeViewModel, onLeagueClick: (String) -> Unit, onMatc
 
 @Composable
 fun HomeScreenContent(
-    matches: List<MatchDao.ScheduledMatchWithTeams>,
+    matches: List<MatchDao.MatchWithTeams>,
     competitions: List<League>,
     favoriteIds: Set<Int>,
     favoriteLeagueIds: Set<Int>,
@@ -101,7 +98,7 @@ fun HomeScreenContent(
     isFetching: Boolean,
     onLeagueClick: (String) -> Unit,
     onMatchClick: (Int) -> Unit,
-    onFavoriteToggle: (MatchDao.ScheduledMatchWithTeams) -> Unit,
+    onFavoriteToggle: (MatchDao.MatchWithTeams) -> Unit,
     onLeagueFavoriteToggle: (League) -> Unit
 ){
     val context = LocalContext.current
@@ -246,10 +243,10 @@ fun CompetitionItem(
 
 @Composable
 fun MatchesList(
-    matches: List<MatchDao.ScheduledMatchWithTeams>,
+    matches: List<MatchDao.MatchWithTeams>,
     favoriteIds: Set<Int>,
     onMatchClick: (Int) -> Unit,
-    onFavoriteToggle: (MatchDao.ScheduledMatchWithTeams) -> Unit
+    onFavoriteToggle: (MatchDao.MatchWithTeams) -> Unit
 ) {
     LazyColumn {
         items(matches) { match ->
@@ -261,10 +258,10 @@ fun MatchesList(
 
 @Composable
 fun MatchItem(
-    match: MatchDao.ScheduledMatchWithTeams,
+    match: MatchDao.MatchWithTeams,
     isFavorite: Boolean,
     onMatchClick: (Int) -> Unit,
-    onFavoriteToggle: (MatchDao.ScheduledMatchWithTeams) -> Unit
+    onFavoriteToggle: (MatchDao.MatchWithTeams) -> Unit
 ) {
     Card(
         modifier = Modifier

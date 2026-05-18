@@ -9,21 +9,21 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-// 1. Tutaj wymieniamy wszystkie klasy encji, które stworzyliśmy
 @Database(
     entities = [
         User::class, League::class, Team::class, LeagueTable::class,
         Match::class, MatchEvent::class, LeagueScorer::class, Favorite::class
     ],
-    version = 8 // Zmiana numeru przy kazdej zmianie bazy danych
+    version = 9
 )
 abstract class AppDatabase : RoomDatabase() {
-    // Twoje abstrakcyjne metody do DAO (np. abstract fun userDao(): UserDao)
-    abstract fun userDao(): UserDao // To pozwala nam używać metod z UserDao
+    abstract fun userDao(): UserDao
     abstract fun favoriteDao(): FavoriteDao
     abstract fun leagueDao(): LeagueDao
     abstract fun matchDao(): MatchDao
     abstract fun teamDao(): TeamDao
+    abstract fun leagueTableDao(): LeagueTableDao
+    abstract fun leagueScorerDao(): LeagueScorerDao
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null

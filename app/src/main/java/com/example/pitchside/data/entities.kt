@@ -5,7 +5,6 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-// 1. Użytkownicy
 @Entity(tableName = "Uzytkownicy")
 data class User(
     @PrimaryKey(autoGenerate = true) val uzytkownik_id: Int = 0,
@@ -14,7 +13,6 @@ data class User(
     val haslo: String
 )
 
-// 2. Ligi
 @Entity(tableName = "Ligi")
 data class League(
     @PrimaryKey val liga_id: Int,
@@ -26,7 +24,6 @@ data class League(
 
 )
 
-// 3. Drużyny
 @Entity(tableName = "Druzyny")
 data class Team(
     @PrimaryKey val druzyna_id: Int,
@@ -36,7 +33,6 @@ data class Team(
     val logo: String?
 )
 
-// 4. Tabela Ligowa
 @Entity(
     tableName = "Tabela_Ligowa",
     primaryKeys = ["liga_id", "druzyna_id"],
@@ -47,7 +43,9 @@ data class Team(
 )
 data class LeagueTable(
     val liga_id: Int,
+    val kod_ligi: String,
     val druzyna_id: Int,
+    val grupa: String?,
     val pozycja: Int,
     val mecze_rozegrane: Int = 0,
     val wygrane: Int = 0,
@@ -58,7 +56,6 @@ data class LeagueTable(
     val bramki_stracone: Int = 0
 )
 
-// 5. Mecze
 @Entity(
     tableName = "Mecze",
     foreignKeys = [
@@ -70,6 +67,7 @@ data class LeagueTable(
 data class Match(
     @PrimaryKey val mecz_id: Int,
     val liga_id: Int,
+    val kod_ligi: String?,
     val id_gospodarza: Int,
     val id_goscia: Int,
     val data_meczu: String?,
@@ -80,7 +78,6 @@ data class Match(
     val faza: String?
 )
 
-// 6. Wydarzenia Meczowe
 @Entity(
     tableName = "Wydarzenia_Meczowe",
     foreignKeys = [
@@ -98,7 +95,6 @@ data class MatchEvent(
     val druzyna_id: Int
 )
 
-// 7. Strzelcy Ligi
 @Entity(
     tableName = "Strzelcy_Ligi",
     indices = [Index(value = ["liga_id", "nazwisko_zawodnika"], unique = true)],
@@ -110,13 +106,13 @@ data class MatchEvent(
 data class LeagueScorer(
     @PrimaryKey(autoGenerate = true) val strzelec_id: Int = 0,
     val liga_id: Int,
+    val kod_ligi: String?,
     val druzyna_id: Int,
     val nazwisko_zawodnika: String,
     val liczba_goli: Int = 0,
     val liczba_asyst: Int = 0
 )
 
-// 8. Ulubione
 @Entity(
     tableName = "Ulubione",
     indices = [Index(value = ["uzytkownik_id", "typ_obiektu", "obiekt_id"], unique = true)],
@@ -135,12 +131,12 @@ data class Favorite(
     val typ_obiektu: String,
     val obiekt_id: Int,
     val nazwa_gospodarza: String? = null,
-    val skrot_gospodarza: String? = null, // NOWE
-    val herb_gospodarza: String? = null,  // NOWE
+    val skrot_gospodarza: String? = null,
+    val herb_gospodarza: String? = null,
     val nazwa_goscia: String? = null,
-    val skrot_goscia: String? = null,      // NOWE
-    val herb_goscia: String? = null,        // NOWE
+    val skrot_goscia: String? = null,
+    val herb_goscia: String? = null,
     val nazwa_ligi: String? = null,
     val emblem_ligi: String? = null,
-    val kod_ligi: String? = null // DODAJ TO POLE
+    val kod_ligi: String? = null
 )

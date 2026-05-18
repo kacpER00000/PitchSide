@@ -9,24 +9,15 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.pitchside.api.dao.CompetitionAPI
 import com.example.pitchside.api.dao.MatchesAPI
-import com.example.pitchside.api.responses.CompetitionResponse
-import com.example.pitchside.api.responses.CompetitionsResponse
-import com.example.pitchside.api.responses.MatchEntry
-import com.example.pitchside.api.responses.MatchResponse
 import com.example.pitchside.data.AppDatabase
 import com.example.pitchside.data.Favorite
 import com.example.pitchside.data.League
-import com.example.pitchside.data.Match
-import com.example.pitchside.data.MatchDao.ScheduledMatchWithTeams
+import com.example.pitchside.data.MatchDao.MatchWithTeams
 import com.example.pitchside.managers.RetrofitManager
 import com.example.pitchside.managers.SessionManager
 import com.example.pitchside.repositories.LeagueRepository
 import com.example.pitchside.repositories.MatchRepository
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import retrofit2.Response
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -34,11 +25,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val matchesAPI = RetrofitManager.create<MatchesAPI>()
     private val matchRepository = MatchRepository(db.matchDao(), db.teamDao(), matchesAPI)
     private val competitionAPI = RetrofitManager.create<CompetitionAPI>()
-    private val leagueRepository = LeagueRepository(competitionAPI, db.leagueDao())
+    private val leagueRepository = LeagueRepository(competitionAPI, db.leagueDao(), db.leagueTableDao(), db.leagueScorerDao())
     private val favoriteDao = db.favoriteDao()
 
     val competitions: LiveData<List<League>> = leagueRepository.getAllLeagues().asLiveData()
-    val scheduled: LiveData<List<ScheduledMatchWithTeams>> = matchRepository.getScheduledMatches().asLiveData()
+    val scheduled: LiveData<List<MatchWithTeams>> = matchRepository.getScheduledMatches().asLiveData()
 
     private val _favoriteIds = MutableLiveData<Set<Int>>(emptySet())
     val favoriteIds = _favoriteIds
@@ -68,7 +59,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun toggleFavorite(match: ScheduledMatchWithTeams) {
+    fun toggleFavorite(match: MatchWithTeams) {
         val user = SessionManager.loggedInUser ?: return
         val matchId = match.matchId ?: return
         viewModelScope.launch {
@@ -125,7 +116,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     matchRepository.refreshData()
                 }
             } catch (e: Exception) {
-                Log.e("HOME_VM", "Błąd meczów: ${e.message}")
                 _error.value = true
             } finally {
                 _isFetching.value = false

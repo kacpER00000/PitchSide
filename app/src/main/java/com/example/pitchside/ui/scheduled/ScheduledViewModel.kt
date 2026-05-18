@@ -3,36 +3,35 @@ package com.example.pitchside.ui.scheduled
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.pitchside.api.dao.MatchesAPI
-import com.example.pitchside.api.responses.MatchEntry
 import com.example.pitchside.data.AppDatabase
 import com.example.pitchside.data.Favorite
+import com.example.pitchside.data.MatchDao
 import com.example.pitchside.managers.RetrofitManager
 import com.example.pitchside.managers.SessionManager
+import com.example.pitchside.repositories.MatchRepository
 import kotlinx.coroutines.launch
 
 class ScheduledViewModel(application: Application) : AndroidViewModel(application) {
-    private val _scheduled = MutableLiveData<List<MatchEntry>>(emptyList())
-    val scheduled = _scheduled
+
+    private val db = AppDatabase.getDatabase(application)
+    private val matchesAPI = RetrofitManager.create<MatchesAPI>()
+    private val matchRepository = MatchRepository(db.matchDao(), db.teamDao(), matchesAPI)
+    val scheduled = matchRepository.getScheduledMatches().asLiveData()
     private val _error = MutableLiveData(false)
     private val _isFetching = MutableLiveData(false)
     val error = _error
     val isFetching = _isFetching
-
-    // DODANO: Obsługa bazy danych i ulubionych
     private val favoriteDao = AppDatabase.getDatabase(application).favoriteDao()
     private val _favoriteIds = MutableLiveData<Set<Int>>(emptySet())
     val favoriteIds = _favoriteIds
-
-    val matchesAPI = RetrofitManager.create<MatchesAPI>()
 
     init {
         getScheduledMatches()
         observeFavorites()
     }
-
-    // DODANO: Obserwowanie zmian w bazie danych
     private fun observeFavorites() {
         val user = SessionManager.loggedInUser ?: return
         viewModelScope.launch {
@@ -41,11 +40,9 @@ class ScheduledViewModel(application: Application) : AndroidViewModel(applicatio
             }
         }
     }
-
-    // DODANO: Logika przełączania gwiazdki
-    fun toggleFavorite(match: MatchEntry) {
+    fun toggleFavorite(match: MatchDao.MatchWithTeams) {
         val user = SessionManager.loggedInUser ?: return
-        val matchId = match.id ?: return
+        val matchId = match.matchId ?: return
 
         viewModelScope.launch {
             val isFav = favoriteDao.czyUlubiony(user.uzytkownik_id, "MECZ", matchId)
@@ -57,12 +54,12 @@ class ScheduledViewModel(application: Application) : AndroidViewModel(applicatio
                         uzytkownik_id = user.uzytkownik_id,
                         typ_obiektu = "MECZ",
                         obiekt_id = matchId,
-                        nazwa_gospodarza = match.homeTeam.name,
-                        skrot_gospodarza = match.homeTeam.shortName,
-                        herb_gospodarza = match.homeTeam.crest,
-                        nazwa_goscia = match.awayTeam.name,
-                        skrot_goscia = match.awayTeam.shortName,
-                        herb_goscia = match.awayTeam.crest
+                        nazwa_gospodarza = match.homeTeamName,
+                        skrot_gospodarza = match.homeTeamName,
+                        herb_gospodarza = match.homeTeamCrest,
+                        nazwa_goscia = match.awayTeamName,
+                        skrot_goscia = match.awayTeamName,
+                        herb_goscia = match.awayTeamCrest
                     )
                 )
             }
@@ -73,12 +70,8 @@ class ScheduledViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             _isFetching.value = true
             try {
-                val response = matchesAPI.getScheduledMatches()
-                if (response.isSuccessful) {
-                    _scheduled.value = response.body()?.matches
-                    _error.value = false
-                } else {
-                    _error.value = true
+                if(scheduled.value.isNullOrEmpty()){
+                    matchRepository.refreshData()
                 }
             } catch (e: Exception) {
                 _error.value = true
