@@ -118,7 +118,7 @@ class MainActivity : AppCompatActivity() {
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
-        val syncRequest = PeriodicWorkRequestBuilder<DatabaseSyncWorker>(12, TimeUnit.HOURS)
+        val syncRequest = PeriodicWorkRequestBuilder<DatabaseSyncWorker>(6, TimeUnit.HOURS)
             .setConstraints(constraints)
             .build()
 

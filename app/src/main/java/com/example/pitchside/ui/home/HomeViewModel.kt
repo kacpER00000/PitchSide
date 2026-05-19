@@ -44,7 +44,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val isFetching = _isFetching
 
     init {
-        fetchAllData()
+        ensureDataLoaded()
         observeFavorites()
     }
 
@@ -61,7 +61,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun toggleFavorite(match: MatchWithTeams) {
         val user = SessionManager.loggedInUser ?: return
-        val matchId = match.matchId ?: return
+        val matchId = match.matchId
         viewModelScope.launch {
             val isFav = favoriteDao.czyUlubiony(user.uzytkownik_id, "MECZ", matchId)
             if (isFav) {
@@ -107,18 +107,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun fetchAllData() {
+    fun ensureDataLoaded() {
         viewModelScope.launch {
-            _isFetching.value = true
-            _error.value = false
-            try {
-                if(scheduled.value.isNullOrEmpty()){
-                    matchRepository.refreshData()
-                }
-            } catch (e: Exception) {
-                _error.value = true
-            } finally {
-                _isFetching.value = false
+            if (matchRepository.isMatchesEmpty()) {
+                matchRepository.refreshData()
             }
         }
     }

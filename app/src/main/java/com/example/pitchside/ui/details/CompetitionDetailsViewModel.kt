@@ -104,7 +104,6 @@ class CompetitionDetailsViewModel(application: Application) : AndroidViewModel(a
     fun toggleFavorite() {
         val user = SessionManager.loggedInUser ?: return
         val code = competitionCode.value ?: return
-        if (code.isBlank()) return
 
         viewModelScope.launch {
             val isFav = _isFavorite.value ?: false

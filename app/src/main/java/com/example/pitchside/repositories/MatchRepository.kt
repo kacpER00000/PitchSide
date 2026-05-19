@@ -16,12 +16,19 @@ class MatchRepository(
     private val api: MatchesAPI
 ) {
 
+    suspend fun isMatchesEmpty(): Boolean{
+        return matchDao.getMatchCount() == 0
+    }
 
     fun getScheduledMatches(): Flow<List<MatchWithTeams>> {
         return matchDao.getStatusMatchesWithTeams("TIMED")
     }
     fun getStatusMatchesForLeague(leagueCode: String, status: String): Flow<List<MatchWithTeams>>{
         return matchDao.getStatusMatchesWithTeamsForLeague(status,leagueCode)
+    }
+
+    fun getMatchByMatchId(matchId: Int): Flow<MatchWithTeams>{
+        return matchDao.getMatchByMatchId(matchId)
     }
 
     suspend fun refreshData() {
@@ -69,7 +76,7 @@ class MatchRepository(
             Match(
                 it.id, it.competition.id, it.competition.code, it.homeTeam.id, it.awayTeam.id,
                 it.utcDate, it.status, it.score?.fullTime?.home,
-                it.score?.fullTime?.away, it.matchday, it.stage
+                it.score?.fullTime?.away, it.matchday, it.stage, it.referees?.firstOrNull()?.name
             )
         }
         matchDao.insertMatches(mappedMatches)

@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.example.pitchside.managers.SessionManager
-import com.example.pitchside.ui.home.CrestAsyncImage
 
 class MatchDetailsFragment : Fragment() {
     private val viewModel: MatchDetailsViewModel by viewModels()
@@ -36,12 +35,11 @@ class MatchDetailsFragment : Fragment() {
         return ComposeView(requireContext()).apply {
             setContent {
                 val match by viewModel.match.observeAsState()
-                val isFetching by viewModel.isFetching.observeAsState(false)
-                val isFavorite by viewModel.isFavorite.observeAsState(false) // DODANO
+                val isFavorite by viewModel.isFavorite.observeAsState(false)
 
                 LaunchedEffect(matchId) {
                     if (matchId != -1) {
-                        viewModel.fetchMatchDetails(matchId)
+                        viewModel.setMatchId(matchId)
                     }
                 }
 
@@ -49,25 +47,20 @@ class MatchDetailsFragment : Fragment() {
                     modifier = Modifier.fillMaxSize().background(Color(0xFF121212)),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (isFetching) {
-                        CircularProgressIndicator(color = Color.White)
-                    } else if (match != null) {
+                    if (match != null) {
                         match?.let { m ->
                             Column(
                                 modifier = Modifier.fillMaxSize().padding(24.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                // Nagłówek z Ligą i Gwiazdką
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // Pusty spacer dla wycentrowania tekstu ligi (opcjonalnie)
                                     Spacer(modifier = Modifier.width(48.dp))
-
                                     Text(
-                                        text = m.competition?.name ?: "",
+                                        text = m.leagueName ?: "",
                                         color = Color.LightGray,
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Medium,
@@ -75,7 +68,6 @@ class MatchDetailsFragment : Fragment() {
                                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                     )
 
-                                    // DODANO: Gwiazdka ulubionych
                                     if (SessionManager.isLoggedIn()) {
                                         IconButton(onClick = { viewModel.toggleFavorite() }) {
                                             Icon(
@@ -97,10 +89,10 @@ class MatchDetailsFragment : Fragment() {
                                     horizontalArrangement = Arrangement.SpaceEvenly,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    TeamDetailItem(m.homeTeam.crest ?: "", m.homeTeam.shortName ?: m.homeTeam.name ?: "")
+                                    TeamDetailItem(m.homeTeamCrest ?: "", m.homeTeamName ?: m.homeTeamName ?: "")
 
-                                    val homeScore = m.score?.fullTime?.home
-                                    val awayScore = m.score?.fullTime?.away
+                                    val homeScore = m.homeTeamScore
+                                    val awayScore = m.awayTeamScore
 
                                     val displayText = if (homeScore != null && awayScore != null) {
                                         "$homeScore : $awayScore"
@@ -115,7 +107,7 @@ class MatchDetailsFragment : Fragment() {
                                         fontWeight = FontWeight.Bold
                                     )
 
-                                    TeamDetailItem(m.awayTeam.crest ?: "", m.awayTeam.shortName ?: m.awayTeam.name ?: "")
+                                    TeamDetailItem(m.awayTeamCrest ?: "", m.awayTeamName ?: m.awayTeamName ?: "")
                                 }
 
                                 Spacer(modifier = Modifier.height(48.dp))
@@ -125,24 +117,24 @@ class MatchDetailsFragment : Fragment() {
                                     colors = CardDefaults.cardColors(containerColor = Color(0xFF222222))
                                 ) {
                                     Column(modifier = Modifier.padding(16.dp)) {
-                                        DetailRow("Data", m.utcDate?.take(10) ?: "-")
+                                        DetailRow("Data", m.startDate?.take(10) ?: "-")
 
                                         val displayStatus = when(m.status) {
                                             "TIMED" -> "Zaplanowany"
                                             "SCHEDULED" -> "Zaplanowany"
                                             "FINISHED" -> "Zakończony"
                                             "IN_PLAY" -> "W trakcie"
-                                            else -> m.status ?: "Nieznany"
+                                            else -> m.status
                                         }
                                         DetailRow("Status", displayStatus)
 
-                                        DetailRow("Sędzia", m.referees?.firstOrNull()?.name ?: "Brak danych")
+                                        DetailRow("Sędzia", m.referee ?: "Brak danych")
                                     }
                                 }
                             }
                         }
                     } else {
-                        Text("Nie udało się pobrać danych meczu.", color = Color.White)
+                        CircularProgressIndicator(color = Color.White)
                     }
                 }
             }

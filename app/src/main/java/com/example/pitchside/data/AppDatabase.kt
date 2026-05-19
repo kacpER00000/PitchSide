@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
         User::class, League::class, Team::class, LeagueTable::class,
         Match::class, MatchEvent::class, LeagueScorer::class, Favorite::class
     ],
-    version = 9
+    version = 10
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao

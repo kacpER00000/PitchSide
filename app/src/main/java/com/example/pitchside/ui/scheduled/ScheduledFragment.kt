@@ -64,13 +64,11 @@ fun ScheduledScreen(viewModel: ScheduledViewModel, onMatchClick: (Int) -> Unit) 
     val matches by viewModel.scheduled.observeAsState(emptyList())
     val favoriteIds by viewModel.favoriteIds.observeAsState(emptySet())
     val hasError by viewModel.error.observeAsState(false)
-    val isFetching by viewModel.isFetching.observeAsState(true)
 
     ScheduledScreenContent(
         matches = matches,
         favoriteIds = favoriteIds,
         hasError = hasError,
-        isFetching = isFetching,
         onMatchClick = onMatchClick,
         onFavoriteToggle = { viewModel.toggleFavorite(it) }
     )
@@ -81,7 +79,6 @@ fun ScheduledScreenContent(
     matches: List<MatchDao.MatchWithTeams>,
     favoriteIds: Set<Int>,
     hasError: Boolean,
-    isFetching: Boolean,
     onMatchClick: (Int) -> Unit,
     onFavoriteToggle: (MatchDao.MatchWithTeams) -> Unit
 ) {
@@ -93,13 +90,7 @@ fun ScheduledScreenContent(
     }
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFF121212))) {
         ScheduledHeader()
-        if (isFetching) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
-            }
-        } else {
-            MatchesList(matches, favoriteIds, onMatchClick, onFavoriteToggle)
-        }
+        MatchesList(matches, favoriteIds, onMatchClick, onFavoriteToggle)
     }
 }
 
@@ -145,7 +136,7 @@ fun MatchItem(
             .fillMaxWidth()
             .padding(8.dp)
             .clickable {
-                match.matchId?.let { id -> onMatchClick(id) }
+                onMatchClick(match.matchId)
             },
         colors = CardDefaults.cardColors(containerColor = Color(0xFF8F8E8E))
     ) {
@@ -188,6 +179,6 @@ fun TeamCrestImage(url: String, teamName: String) {
             .crossfade(true)
             .build(),
         contentDescription = teamName,
-        modifier = Modifier.size(30.dp) // Zmniejszyłem trochę, żeby gwiazdka się mieściła
+        modifier = Modifier.size(30.dp)
     )
 }

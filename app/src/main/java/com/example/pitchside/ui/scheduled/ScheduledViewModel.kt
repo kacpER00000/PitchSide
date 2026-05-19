@@ -29,7 +29,6 @@ class ScheduledViewModel(application: Application) : AndroidViewModel(applicatio
     val favoriteIds = _favoriteIds
 
     init {
-        getScheduledMatches()
         observeFavorites()
     }
     private fun observeFavorites() {
@@ -62,21 +61,6 @@ class ScheduledViewModel(application: Application) : AndroidViewModel(applicatio
                         herb_goscia = match.awayTeamCrest
                     )
                 )
-            }
-        }
-    }
-
-    fun getScheduledMatches() {
-        viewModelScope.launch {
-            _isFetching.value = true
-            try {
-                if(scheduled.value.isNullOrEmpty()){
-                    matchRepository.refreshData()
-                }
-            } catch (e: Exception) {
-                _error.value = true
-            } finally {
-                _isFetching.value = false
             }
         }
     }

@@ -75,7 +75,8 @@ data class Match(
     val wynik_gospodarz: Int?,
     val wynik_gosc: Int?,
     val kolejka: Int?,
-    val faza: String?
+    val faza: String?,
+    val sedzia: String?
 )
 
 @Entity(
