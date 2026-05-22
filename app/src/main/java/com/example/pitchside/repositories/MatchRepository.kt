@@ -36,6 +36,7 @@ class MatchRepository(
             val response = api.getScheduledMatches()
             if (response.isSuccessful) {
                 val matches = response.body()?.matches ?: emptyList()
+                this.matchDao.clearOnlyScheduledMatches()
                 updateTeams(matches)
                 updateMatches(matches)
             }

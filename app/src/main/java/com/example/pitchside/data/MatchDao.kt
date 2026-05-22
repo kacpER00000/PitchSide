@@ -25,6 +25,9 @@ interface MatchDao{
     @Upsert
     suspend fun insertMatches(matches: List<Match>)
 
+    @Query("DELETE FROM Mecze WHERE status IN ('SCHEDULED', 'TIMED')")
+    suspend fun clearOnlyScheduledMatches()
+
     @Query("SELECT COUNT(*) FROM Mecze")
     suspend fun getMatchCount(): Int
 
@@ -102,9 +105,6 @@ interface MatchDao{
     WHERE m.mecz_id = :matchId
 """)
     fun getMatchByMatchId(matchId: Int): Flow<MatchWithTeams>
-
-    @Query("DELETE FROM Mecze")
-    suspend fun truncateMatches()
 
     @Query("DELETE FROM Mecze WHERE kod_ligi = :leagueCode AND status = :status")
     suspend fun truncateStatusMatchesForLeague(leagueCode: String, status: String)
