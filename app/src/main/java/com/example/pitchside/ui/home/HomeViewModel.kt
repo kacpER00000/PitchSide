@@ -48,7 +48,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         observeFavorites()
     }
 
-
     private fun observeFavorites() {
         val user = SessionManager.loggedInUser ?: return
         viewModelScope.launch {
@@ -109,8 +108,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun ensureDataLoaded() {
         viewModelScope.launch {
-            if (matchRepository.isMatchesEmpty()) {
-                matchRepository.refreshData()
+            try {
+                if (matchRepository.isMatchesEmpty()) {
+                    matchRepository.refreshData()
+                }
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Błąd bazy danych: ${e.message}")
+                _error.postValue(true)
             }
         }
     }
