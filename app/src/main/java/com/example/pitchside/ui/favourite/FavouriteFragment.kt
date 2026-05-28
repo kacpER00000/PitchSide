@@ -60,7 +60,6 @@ class FavouriteFragment : Fragment() {
                         findNavController().navigate(R.id.matchDetailsFragment, bundle)
                     },
                     onLoginClick = {
-                        // Nawigacja do ekranu logowania
                         findNavController().navigate(R.id.loginFragment)
                     }
                 )
@@ -81,32 +80,28 @@ fun FavouriteScreen(
     val isLoggedIn = viewModel.isLoggedIn()
 
     Column(modifier = Modifier.fillMaxSize().background(Color.White).padding(16.dp)) {
-        // Logika wyświetlania zawartości
         if (!isLoggedIn) {
-            // Przypadek: Użytkownik NIEZALOGOWANY
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(20.dp)) {
                     Text(
                         text = "Zaloguj się, aby móc dodawać mecze lub ligi do ulubionych.",
-                        color = Color.Gray,
+                        color = Color(0xFF111111),
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = "Zaloguj się teraz",
-                        color = MaterialTheme.colorScheme.primary,
+                        color = Color(0xFFD4AF37),
                         textDecoration = TextDecoration.Underline,
                         modifier = Modifier.clickable { onLoginClick() }
                     )
                 }
             }
         } else if (favoriteMatches.isEmpty()) {
-            // Przypadek: Zalogowany, ale PUSTA LISTA
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(text = "Brak ulubionych.", color = Color.Gray)
+                Text(text = "Brak ulubionych.", color = Color(0xFF111111))
             }
         } else {
-            // Przypadek: Zalogowany i MA ULUBIONE
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(favoriteMatches) { favorite ->
                     FavoriteItem(
@@ -128,12 +123,11 @@ fun FavouriteScreen(
 
 @Composable
 fun FavoriteItem(favorite: Favorite, onDelete: () -> Unit, onItemClick: () -> Unit) {
-    // Zachowałem Twoją kartę z szarym tłem i białym tekstem
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onItemClick() },
-        colors = CardDefaults.cardColors(containerColor = Color.Gray)
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF111111))
     ) {
         Row(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
@@ -149,12 +143,12 @@ fun FavoriteItem(favorite: Favorite, onDelete: () -> Unit, onItemClick: () -> Un
                     ) {
                         CrestAsyncImageSmall(favorite.herb_gospodarza ?: "", "")
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = favorite.skrot_gospodarza ?: "", color = Color.White, maxLines = 1)
+                        Text(text = favorite.skrot_gospodarza ?: "", color = Color(0xFFD4AF37), maxLines = 1)
                     }
 
                     Text(
                         text = "-",
-                        color = Color.White,
+                        color = Color(0xFFD4AF37),
                         modifier = Modifier.width(30.dp),
                         textAlign = TextAlign.Center
                     )
@@ -164,7 +158,7 @@ fun FavoriteItem(favorite: Favorite, onDelete: () -> Unit, onItemClick: () -> Un
                         modifier = Modifier.weight(1f),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        Text(text = favorite.skrot_goscia ?: "", color = Color.White, maxLines = 1)
+                        Text(text = favorite.skrot_goscia ?: "", color = Color(0xFFD4AF37), maxLines = 1)
                         Spacer(modifier = Modifier.width(8.dp))
                         CrestAsyncImageSmall(favorite.herb_goscia ?: "", "")
                     }
@@ -174,8 +168,8 @@ fun FavoriteItem(favorite: Favorite, onDelete: () -> Unit, onItemClick: () -> Un
                     CrestAsyncImageSmall(favorite.emblem_ligi ?: "", "")
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text(text = favorite.nazwa_ligi ?: "Liga", color = Color.White)
-                        Text(text = "Liga", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                        Text(text = favorite.nazwa_ligi ?: "Liga", color = Color(0xFFD4AF37))
+                        Text(text = "Liga", color = Color(0xFFD4AF37), style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }

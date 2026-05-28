@@ -88,7 +88,7 @@ fun ScheduledScreenContent(
             Toast.makeText(context, "Wystąpił błąd podczas pobierania danych.", Toast.LENGTH_LONG).show()
         }
     }
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFF121212))) {
+    Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
         ScheduledHeader()
         MatchesList(matches, favoriteIds, onMatchClick, onFavoriteToggle)
     }
@@ -97,12 +97,12 @@ fun ScheduledScreenContent(
 @Composable
 fun ScheduledHeader() {
     Box(
-        modifier = Modifier.fillMaxWidth().height(51.dp).background(Color(0xFF595959)),
+        modifier = Modifier.fillMaxWidth().height(51.dp).background(Color(0xFF111111)),
         contentAlignment = Alignment.CenterStart
     ) {
         Text(
             text = "Zaplanowane mecze",
-            color = Color.White,
+            color = Color(0xFFD4AF37),
             modifier = Modifier.padding(start = 16.dp),
             fontWeight = FontWeight.Bold
         )
@@ -138,7 +138,7 @@ fun MatchItem(
             .clickable {
                 onMatchClick(match.matchId)
             },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF8F8E8E))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF111111))
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -148,11 +148,11 @@ fun MatchItem(
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                 CrestAsyncImage(match.homeTeamCrest ?: "", match.homeTeamName ?: "Unknown")
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = match.homeTeamName ?: "", color = Color.White)
+                Text(text = match.homeTeamName ?: "", color = Color(0xFFD4AF37))
             }
-            Text(text = "-", color = Color.White, modifier = Modifier.padding(horizontal = 4.dp))
+            Text(text = "-", color = Color(0xFFD4AF37), modifier = Modifier.padding(horizontal = 4.dp))
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
-                Text(text = match.awayTeamName ?: "", color = Color.White)
+                Text(text = match.awayTeamName ?: "", color = Color(0xFFD4AF37))
                 Spacer(modifier = Modifier.width(8.dp))
                 CrestAsyncImage(match.awayTeamCrest ?: "", match.awayTeamName ?: "Unknown")
             }
@@ -162,7 +162,7 @@ fun MatchItem(
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
                         contentDescription = "Ulubione",
-                        tint = if (isFavorite) Color.Yellow else Color.White
+                        tint = if (isFavorite) Color(0xFFD4AF37) else Color.White
                     )
                 }
             }

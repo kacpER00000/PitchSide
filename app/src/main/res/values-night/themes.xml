@@ -1,16 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.PitchSide" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_200</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
-        <item name="colorOnPrimary">@color/black</item>
-        <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorSecondaryVariant">@color/teal_200</item>
-        <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
+    <style name="Theme.PitchSide" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/logo_gold</item>
+        <item name="colorPrimaryVariant">@color/logo_gold_dark</item>
+        <item name="colorOnPrimary">@color/logo_black</item>
+        <item name="colorSecondary">@color/logo_black</item>
+        <item name="colorSecondaryVariant">@color/logo_black</item>
+        <item name="colorOnSecondary">@color/app_white</item>
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
-        <!-- Customize your theme here. -->
+        <item name="android:windowBackground">@color/app_white</item>
+        <item name="colorSecondaryContainer">@color/logo_gold</item>
+        <item name="colorOnSecondaryContainer">@color/logo_black</item>
+        <item name="colorSurfaceContainer">@color/app_white</item>
+        <item name="colorSurfaceVariant">@color/app_white</item>
+        <item name="colorOnSurfaceVariant">@color/logo_black</item>
+        <item name="colorAccent">@color/logo_gold</item>
+        <item name="colorControlActivated">@color/logo_gold</item>
     </style>
 </resources>

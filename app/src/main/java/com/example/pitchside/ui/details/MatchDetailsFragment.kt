@@ -44,7 +44,7 @@ class MatchDetailsFragment : Fragment() {
                 }
 
                 Box(
-                    modifier = Modifier.fillMaxSize().background(Color(0xFF121212)),
+                    modifier = Modifier.fillMaxSize().background(Color.White),
                     contentAlignment = Alignment.Center
                 ) {
                     if (match != null) {
@@ -61,7 +61,7 @@ class MatchDetailsFragment : Fragment() {
                                     Spacer(modifier = Modifier.width(48.dp))
                                     Text(
                                         text = m.leagueName ?: "",
-                                        color = Color.LightGray,
+                                        color = Color(0xFF111111),
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Medium,
                                         modifier = Modifier.weight(1f),
@@ -73,7 +73,7 @@ class MatchDetailsFragment : Fragment() {
                                             Icon(
                                                 imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
                                                 contentDescription = "Ulubiony mecz",
-                                                tint = if (isFavorite) Color.Yellow else Color.White,
+                                                tint = if (isFavorite) Color(0xFFD4AF37) else Color(0xFF111111),
                                                 modifier = Modifier.size(32.dp)
                                             )
                                         }
@@ -102,7 +102,7 @@ class MatchDetailsFragment : Fragment() {
 
                                     Text(
                                         text = displayText,
-                                        color = Color.White,
+                                        color = Color(0xFFD4AF37),
                                         fontSize = 32.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -114,7 +114,7 @@ class MatchDetailsFragment : Fragment() {
 
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF222222))
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF111111))
                                 ) {
                                     Column(modifier = Modifier.padding(16.dp)) {
                                         DetailRow("Data", m.startDate?.take(10) ?: "-")
@@ -134,7 +134,7 @@ class MatchDetailsFragment : Fragment() {
                             }
                         }
                     } else {
-                        CircularProgressIndicator(color = Color.White)
+                        CircularProgressIndicator(color = Color(0xFFD4AF37))
                     }
                 }
             }
@@ -149,7 +149,7 @@ fun TeamDetailItem(crest: String, name: String) {
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = name,
-            color = Color.White,
+            color = Color(0xFF111111),
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium
         )
@@ -162,7 +162,7 @@ fun DetailRow(label: String, value: String) {
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, color = Color.Gray)
+        Text(label, color = Color.LightGray)
         Text(value, color = Color.White, fontWeight = FontWeight.Medium)
     }
 }

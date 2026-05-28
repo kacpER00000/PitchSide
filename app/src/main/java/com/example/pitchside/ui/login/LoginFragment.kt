@@ -46,16 +46,14 @@ class LoginFragment : Fragment() {
 
 @Composable
 fun LoginScreen(viewModel: LoginViewModel, onNavigateToHome: () -> Unit) {
-    // Stan pól formularza
     var email by remember { mutableStateOf("") }
     var haslo by remember { mutableStateOf("") }
-    var nazwa by remember { mutableStateOf("") } // Używamy tej zmiennej jako Login
+    var nazwa by remember { mutableStateOf("") }
     var isRegisterMode by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val success by viewModel.isSuccess.observeAsState(false)
     val errorMsg by viewModel.error.observeAsState(null)
-
 
     LaunchedEffect(success, errorMsg) {
         if (success) {
@@ -76,19 +74,17 @@ fun LoginScreen(viewModel: LoginViewModel, onNavigateToHome: () -> Unit) {
         Text(
             text = if (isRegisterMode) "Stwórz konto" else "Witaj z powrotem",
             style = MaterialTheme.typography.headlineMedium,
-            color = Color.White
+            color = Color(0xFFD4AF37)
         )
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Pole LOGIN
         CustomTextField(
             value = nazwa,
             onValueChange = { nazwa = it },
             label = if (isRegisterMode) "Nazwa użytkownika" else "Nazwa użytkownika"
         )
 
-        // Pole EMAIL
         if (isRegisterMode) {
             CustomTextField(
                 value = email,
@@ -97,7 +93,6 @@ fun LoginScreen(viewModel: LoginViewModel, onNavigateToHome: () -> Unit) {
             )
         }
 
-        // Pole HASŁO
         CustomTextField(
             value = haslo,
             onValueChange = { haslo = it },
@@ -112,12 +107,14 @@ fun LoginScreen(viewModel: LoginViewModel, onNavigateToHome: () -> Unit) {
                 if (isRegisterMode) {
                     viewModel.zarejestruj(email, haslo, nazwa)
                 } else {
-                    // Punkt 2: Logujemy się przez Login (nazwa) i Hasło
                     viewModel.zaloguj(nazwa, haslo)
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8F8E8E))
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFD4AF37),
+                contentColor = Color(0xFF111111)
+            )
         ) {
             Text(if (isRegisterMode) "Zarejestruj" else "Zaloguj")
         }
@@ -125,7 +122,7 @@ fun LoginScreen(viewModel: LoginViewModel, onNavigateToHome: () -> Unit) {
         TextButton(onClick = { isRegisterMode = !isRegisterMode }) {
             Text(
                 text = if (isRegisterMode) "Masz już konto? Zaloguj się" else "Nie masz konta? Zarejestruj się",
-                color = Color.Black
+                color = Color(0xFF111111)
             )
         }
     }
@@ -139,10 +136,9 @@ fun CustomTextField(
     isPassword: Boolean = false
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        // Tekst NAD inputem - teraz zawsze będzie widoczny
         Text(
             text = label,
-            color = Color.Black,
+            color = Color(0xFF111111),
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
         )
@@ -150,19 +146,18 @@ fun CustomTextField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            // Usuwamy label z środka (to ono robiło te dziury)
             label = null,
-
-            placeholder = { Text(text = "$label", color = Color.Gray) },
+            placeholder = { Text(text = label, color = Color(0xFF8F8E8E)) },
             visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = Color.White,
                 unfocusedTextColor = Color.White,
-                focusedContainerColor = Color(0xFF2A2A2A),
-                unfocusedContainerColor = Color(0xFF2A2A2A),
-                focusedBorderColor = Color.White,
-                unfocusedBorderColor = Color.DarkGray
+                focusedContainerColor = Color(0xFF111111),
+                unfocusedContainerColor = Color(0xFF111111),
+                focusedBorderColor = Color(0xFFD4AF37),
+                unfocusedBorderColor = Color(0xFF111111),
+                cursorColor = Color(0xFFD4AF37)
             ),
             singleLine = true
         )

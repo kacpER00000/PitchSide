@@ -36,6 +36,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -99,7 +101,7 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
     val hasError by viewModel.error.observeAsState(false)
     val isFetching by viewModel.isFetching.observeAsState(false)
     val context = LocalContext.current
-    val tabs = listOf("Przyszłe mecze", "Tabela", "Strzelcy","Wyniki")
+    val tabs = listOf("Przyszłe mecze", "Tabela", "Strzelcy", "Wyniki")
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
@@ -113,27 +115,26 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
         }
     }
 
-
     if (isFetching) {
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().background(Color.White),
             contentAlignment = Alignment.Center
 
         ) {
             CircularProgressIndicator(
                 modifier = Modifier.width(64.dp),
-                color = MaterialTheme.colorScheme.secondary,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                color = Color(0xFFD4AF37),
+                trackColor = Color(0xFF111111),
             )
         }
     } else {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().background(Color.White),
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF595959))
+                    .background(Color(0xFF111111))
                     .padding(16.dp)
             ) {
                 Row(
@@ -160,7 +161,7 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 8.dp),
                     thickness = 1.dp,
-                    color = Color.Gray
+                    color = Color.DarkGray
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -174,7 +175,7 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = leagueInfo?.nazwa_ligi ?: "Unknown",
-                        color = Color.White,
+                        color = Color(0xFFD4AF37),
                         style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.weight(1f)
                     )
@@ -185,7 +186,7 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
                             Icon(
                                 imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
                                 contentDescription = "Ulubiona liga",
-                                tint = if (isFavorite) Color.Yellow else Color.White,
+                                tint = if (isFavorite) Color(0xFFD4AF37) else Color.White,
                                 modifier = Modifier.size(32.dp)
                             )
                         }
@@ -194,21 +195,28 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 8.dp),
                     thickness = 1.dp,
-                    color = Color.Gray
+                    color = Color.DarkGray
                 )
             }
             TabRow(
-                selectedTabIndex = selectedTabIndex
+                selectedTabIndex = selectedTabIndex,
+                containerColor = Color(0xFF111111),
+                indicator = { tabPositions ->
+                    TabRowDefaults.Indicator(
+                        modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                        color = Color(0xFFD4AF37)
+                    )
+                }
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
-                        modifier = Modifier.background(Color(0xFF595959)),
+                        modifier = Modifier.background(Color(0xFF111111)),
                         selected = selectedTabIndex == index,
                         onClick = { selectedTabIndex = index },
                         text = {
                             Text(
-                                text=title,
-                                color = Color.White
+                                text = title,
+                                color = if (selectedTabIndex == index) Color(0xFFD4AF37) else Color.White
                             )
                         }
                     )
@@ -224,7 +232,6 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
             }
         }
     }
-
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -254,7 +261,7 @@ fun MatchesList(finishedMatches: Map<Int?, List<MatchDao.MatchWithTeams>?>, onMa
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(51.dp)
-                        .background(Color(0xFF595959)),
+                        .background(Color.White),
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     Text(
@@ -264,7 +271,7 @@ fun MatchesList(finishedMatches: Map<Int?, List<MatchDao.MatchWithTeams>?>, onMa
                             98 -> "Ćwierćfinał"
                             else -> "Kolejka $matchday"
                         },
-                        color = Color.White,
+                        color = Color(0xFF111111),
                         modifier = Modifier.padding(start = 10.dp)
                     )
                 }
@@ -285,9 +292,9 @@ fun MatchItem(match: MatchDao.MatchWithTeams, onMatchClick: (Int) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp)
-            .clickable{ onMatchClick(match.matchId) },
+            .clickable { onMatchClick(match.matchId) },
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF8F8E8E)
+            containerColor = Color(0xFF111111)
         )
     ) {
         Row(
@@ -326,13 +333,13 @@ fun MatchItem(match: MatchDao.MatchWithTeams, onMatchClick: (Int) -> Unit) {
                     if (homeScore != null && awayScore != null) {
                         Text(
                             text = "$homeScore : $awayScore",
-                            color = Color.White,
+                            color = Color(0xFFD4AF37),
                             style = MaterialTheme.typography.titleMedium
                         )
                     } else {
                         Text(
                             text = "vs",
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = Color(0xFFD4AF37).copy(alpha = 0.7f),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -374,7 +381,7 @@ fun MatchItem(match: MatchDao.MatchWithTeams, onMatchClick: (Int) -> Unit) {
 
 @Composable
 fun StandingList(standing: Map<String, List<LeagueTableDao.LeagueTableWithTeam>>) {
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -389,34 +396,34 @@ fun StandingList(standing: Map<String, List<LeagueTableDao.LeagueTableWithTeam>>
             ) {
                 Text(
                     text = "#",
-                    color = Color.White,
+                    color = Color(0xFF111111),
                     modifier = Modifier.width(24.dp)
                 )
                 Spacer(modifier = Modifier.width(18.dp))
                 Text(
                     text = "Drużyna",
-                    color = Color.White,
+                    color = Color(0xFF111111),
                     modifier = Modifier.width(60.dp)
                 )
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.wrapContentWidth()
-                    .padding(end=15.dp)
+                    .padding(end = 15.dp)
             ) {
                 Text(
                     text = "M",
-                    color = Color.White
+                    color = Color(0xFF111111)
                 )
                 Spacer(modifier = Modifier.width(32.dp))
                 Text(
                     text = "B",
-                    color = Color.White,
+                    color = Color(0xFF111111),
                 )
                 Spacer(modifier = Modifier.width(45.dp))
                 Text(
                     text = "P",
-                    color = Color.White,
+                    color = Color(0xFF111111),
                 )
             }
         }
@@ -426,12 +433,12 @@ fun StandingList(standing: Map<String, List<LeagueTableDao.LeagueTableWithTeam>>
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFF444444))
+                            .background(Color.White)
                             .padding(vertical = 8.dp, horizontal = 16.dp)
                     ) {
                         Text(
                             text = groupEntry.key,
-                            color = Color.White,
+                            color = Color(0xFF111111),
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
@@ -451,7 +458,7 @@ fun StandingItem(tableEntry: LeagueTableDao.LeagueTableWithTeam) {
             .fillMaxWidth()
             .padding(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF8F8E8E)
+            containerColor = Color(0xFF111111)
         )
     ) {
         Row(
@@ -484,18 +491,18 @@ fun StandingItem(tableEntry: LeagueTableDao.LeagueTableWithTeam) {
             ) {
                 Text(
                     text = tableEntry.playedMatches.toString(),
-                    color = Color.White
+                    color = Color(0xFFD4AF37)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = "${tableEntry.goalsFor}:${tableEntry.goalsAgainst}",
-                    color = Color.White,
+                    color = Color(0xFFD4AF37),
                     modifier = Modifier.width(45.dp)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = "${tableEntry.points}",
-                    color = Color.White,
+                    color = Color(0xFFD4AF37),
                 )
             }
         }
@@ -504,7 +511,7 @@ fun StandingItem(tableEntry: LeagueTableDao.LeagueTableWithTeam) {
 
 @Composable
 fun TopScorersList(scorers: List<LeagueScorerDao.LeagueScorerWithTeam>) {
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -519,13 +526,13 @@ fun TopScorersList(scorers: List<LeagueScorerDao.LeagueScorerWithTeam>) {
             ) {
                 Text(
                     text = "#",
-                    color = Color.White,
+                    color = Color(0xFF111111),
                     modifier = Modifier.width(24.dp)
                 )
                 Spacer(modifier = Modifier.width(18.dp))
                 Text(
                     text = "Zawodnik",
-                    color = Color.White,
+                    color = Color(0xFF111111),
                     modifier = Modifier.width(60.dp)
                 )
             }
@@ -536,12 +543,12 @@ fun TopScorersList(scorers: List<LeagueScorerDao.LeagueScorerWithTeam>) {
             ) {
                 Text(
                     text = "B",
-                    color = Color.White
+                    color = Color(0xFF111111)
                 )
                 Spacer(modifier = Modifier.width(20.dp))
                 Text(
                     text = "A",
-                    color = Color.White,
+                    color = Color(0xFF111111),
                 )
             }
         }
@@ -560,7 +567,7 @@ fun TopScorerItem(scorerEntry: LeagueScorerDao.LeagueScorerWithTeam, position: I
             .fillMaxWidth()
             .padding(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF8F8E8E)
+            containerColor = Color(0xFF111111)
         )
     ) {
         Row(
@@ -593,12 +600,12 @@ fun TopScorerItem(scorerEntry: LeagueScorerDao.LeagueScorerWithTeam, position: I
             ) {
                 Text(
                     text = scorerEntry.goals.toString(),
-                    color = Color.White
+                    color = Color(0xFFD4AF37)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = scorerEntry.assists.toString(),
-                    color = Color.White,
+                    color = Color(0xFFD4AF37),
                 )
             }
         }

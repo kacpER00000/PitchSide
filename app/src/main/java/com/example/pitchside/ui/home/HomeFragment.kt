@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
@@ -21,6 +22,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
@@ -70,6 +72,18 @@ class HomeFragment : Fragment() {
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        requireActivity().findViewById<androidx.appcompat.widget.Toolbar>(R.id.top_toolbar)
+            ?.setTitleTextColor(android.graphics.Color.parseColor("#D4AF37"))
+    }
+
+    override fun onPause() {
+        super.onPause()
+        requireActivity().findViewById<androidx.appcompat.widget.Toolbar>(R.id.top_toolbar)
+            ?.setTitleTextColor(android.graphics.Color.WHITE)
+    }
 }
 
 @Composable
@@ -95,7 +109,6 @@ fun HomeScreen(viewModel: HomeViewModel, onLeagueClick: (String) -> Unit, onMatc
     )
 }
 
-// IZOLOWANA WYSZUKIWARKA: Z naprawionym "Fake Dropdownem", który rozwiązuje lag renderowania!
 @Composable
 fun SearchBarWithDropdown(
     competitions: List<League>,
@@ -110,7 +123,7 @@ fun SearchBarWithDropdown(
             filteredCompetitions = emptyList()
             dropdownExpanded = false
         } else {
-            delay(200) // Wystarczy 200ms dla idealnej płynności
+            delay(200)
             filteredCompetitions = withContext(Dispatchers.Default) {
                 competitions.filter { it.nazwa_ligi?.contains(query, ignoreCase = true) == true }
             }
@@ -118,7 +131,6 @@ fun SearchBarWithDropdown(
         }
     }
 
-    // Dodano zIndex(1f), aby podpowiedzi z "Fake Dropdownu" wyświetlały się na wierzchu, zasłaniając inne elementy pod spodem
     Box(modifier = Modifier.fillMaxWidth().zIndex(1f)) {
         OutlinedTextField(
             value = query,
@@ -130,7 +142,7 @@ fun SearchBarWithDropdown(
                 .padding(vertical = 4.dp),
             placeholder = { Text(text = "Wyszukaj ligę...") },
             leadingIcon = {
-                Icon(imageVector = Icons.Default.Search, contentDescription = "Ikona szukania")
+                Icon(imageVector = Icons.Default.Search, contentDescription = "Ikona szukania", tint = Color(0xFF111111))
             },
             trailingIcon = {
                 if (query.isNotEmpty()) {
@@ -138,24 +150,24 @@ fun SearchBarWithDropdown(
                         query = ""
                         dropdownExpanded = false
                     }) {
-                        Icon(imageVector = Icons.Default.Clear, contentDescription = "Wyczyść")
+                        Icon(imageVector = Icons.Default.Clear, contentDescription = "Wyczyść", tint = Color(0xFF111111))
                     }
                 }
             },
             singleLine = true,
             maxLines = 1,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF595959),
-                unfocusedBorderColor = Color.LightGray
+                focusedBorderColor = Color(0xFFD4AF37),
+                unfocusedBorderColor = Color(0xFF111111),
+                cursorColor = Color(0xFFD4AF37)
             )
         )
 
-        // TO JEST NOWY MAGICZNY FIX: Zwykła, lekka Karta zamiast ciężkiego DropdownMenu!
         if (dropdownExpanded && filteredCompetitions.isNotEmpty()) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 64.dp), // To opuszcza kartę DOKŁADNIE pod linię pola tekstowego
+                    .padding(top = 64.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
@@ -184,7 +196,7 @@ fun SearchBarWithDropdown(
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(text = league.nazwa_ligi ?: "Nieznana", color = Color.Black)
                         }
-                        Divider(color = Color.LightGray, thickness = 0.5.dp) // Elegancka linia oddzielająca
+                        Divider(color = Color.LightGray, thickness = 0.5.dp)
                     }
                 }
             }
@@ -217,7 +229,7 @@ fun HomeScreenContent(
 
     Column(
         modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
 
         SearchBarWithDropdown(
@@ -227,30 +239,31 @@ fun HomeScreenContent(
 
         if (isFetching) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
+                CircularProgressIndicator(color = Color(0xFFD4AF37))
             }
         } else {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(51.dp)
-                    .background(Color(0xFF595959))
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFF111111))
                     .clickable { competitionsExpanded = !competitionsExpanded },
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "Ligi", color = Color.White)
+                    Text(text = "Ligi", color = Color(0xFFD4AF37))
                     Icon(
                         painter = painterResource(
                             if (competitionsExpanded) R.drawable.outline_arrow_circle_up_24
                             else R.drawable.outline_arrow_circle_down_24
                         ),
                         contentDescription = null,
-                        tint = Color.White
+                        tint = Color(0xFFD4AF37)
                     )
                 }
             }
@@ -265,23 +278,24 @@ fun HomeScreenContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(51.dp)
-                    .background(Color(0xFF595959))
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFF111111))
                     .clickable { matchesExpanded = !matchesExpanded },
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "Zaplanowane mecze", color = Color.White)
+                    Text(text = "Zaplanowane mecze", color = Color(0xFFD4AF37))
                     Icon(
                         painter = painterResource(
                             if (matchesExpanded) R.drawable.outline_arrow_circle_up_24
                             else R.drawable.outline_arrow_circle_down_24
                         ),
                         contentDescription = null,
-                        tint = Color.White
+                        tint = Color(0xFFD4AF37)
                     )
                 }
             }
@@ -328,7 +342,8 @@ fun CompetitionItem(
             .fillMaxWidth()
             .padding(8.dp)
             .clickable { competition.kod_ligi?.let { onLeagueClick(it) } },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF8F8E8E))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF111111)),
+        shape = RoundedCornerShape(12.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -338,7 +353,7 @@ fun CompetitionItem(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 CrestAsyncImage(competition.emblemat_ligi ?: "", competition.nazwa_ligi ?: "Unknown")
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(text = competition.nazwa_ligi ?: "", color = Color.White)
+                Text(text = competition.nazwa_ligi ?: "", color = Color(0xFFD4AF37))
             }
 
             if (SessionManager.isLoggedIn()) {
@@ -346,7 +361,7 @@ fun CompetitionItem(
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
                         contentDescription = "Ulubione",
-                        tint = if (isFavorite) Color.Yellow else Color.White
+                        tint = if (isFavorite) Color(0xFFD4AF37) else Color.White
                     )
                 }
             }
@@ -386,7 +401,8 @@ fun MatchItem(
             .clickable {
                 match.matchId?.let { id -> onMatchClick(id) }
             },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF8F8E8E))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF111111)),
+        shape = RoundedCornerShape(12.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -396,11 +412,11 @@ fun MatchItem(
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                 CrestAsyncImage(match.homeTeamCrest ?: "", match.homeTeamName ?: "Unknown")
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = match.homeTeamName ?: "", color = Color.White)
+                Text(text = match.homeTeamName ?: "", color = Color(0xFFD4AF37))
             }
-            Text(text = "-", color = Color.White, modifier = Modifier.padding(horizontal = 4.dp))
+            Text(text = "-", color = Color(0xFFD4AF37), modifier = Modifier.padding(horizontal = 4.dp))
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
-                Text(text = match.awayTeamName ?: "", color = Color.White)
+                Text(text = match.awayTeamName ?: "", color = Color(0xFFD4AF37))
                 Spacer(modifier = Modifier.width(8.dp))
                 CrestAsyncImage(match.awayTeamCrest ?: "", match.awayTeamName ?: "Unknown")
             }
@@ -410,7 +426,7 @@ fun MatchItem(
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
                         contentDescription = "Ulubione",
-                        tint = if (isFavorite) Color.Yellow else Color.White
+                        tint = if (isFavorite) Color(0xFFD4AF37) else Color.White
                     )
                 }
             }
