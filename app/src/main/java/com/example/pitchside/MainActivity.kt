@@ -85,7 +85,7 @@ class MainActivity : AppCompatActivity() {
         accountItem?.isVisible = isLogged
 
         if (isLogged) {
-            accountItem?.title = "KONTO"
+            accountItem?.title = "Account"
         }
 
         return super.onPrepareOptionsMenu(menu)

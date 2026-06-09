@@ -57,7 +57,7 @@ fun LoginScreen(viewModel: LoginViewModel, onNavigateToHome: () -> Unit) {
 
     LaunchedEffect(success, errorMsg) {
         if (success) {
-            val message = if (isRegisterMode) "Rejestracja udana!" else "Zalogowano pomyślnie!"
+            val message = if (isRegisterMode) "Registration successful!" else "Logged in successfully!"
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
             onNavigateToHome()
         }
@@ -72,7 +72,7 @@ fun LoginScreen(viewModel: LoginViewModel, onNavigateToHome: () -> Unit) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = if (isRegisterMode) "Stwórz konto" else "Witaj z powrotem",
+            text = if (isRegisterMode) "Create account" else "Welcome back",
             style = MaterialTheme.typography.headlineMedium,
             color = Color(0xFFD4AF37)
         )
@@ -82,7 +82,7 @@ fun LoginScreen(viewModel: LoginViewModel, onNavigateToHome: () -> Unit) {
         CustomTextField(
             value = nazwa,
             onValueChange = { nazwa = it },
-            label = if (isRegisterMode) "Nazwa użytkownika" else "Nazwa użytkownika"
+            label = "Username"
         )
 
         if (isRegisterMode) {
@@ -96,7 +96,7 @@ fun LoginScreen(viewModel: LoginViewModel, onNavigateToHome: () -> Unit) {
         CustomTextField(
             value = haslo,
             onValueChange = { haslo = it },
-            label = "Hasło",
+            label = "Password",
             isPassword = true
         )
 
@@ -116,12 +116,12 @@ fun LoginScreen(viewModel: LoginViewModel, onNavigateToHome: () -> Unit) {
                 contentColor = Color(0xFF111111)
             )
         ) {
-            Text(if (isRegisterMode) "Zarejestruj" else "Zaloguj")
+            Text(if (isRegisterMode) "Register" else "Log in")
         }
 
         TextButton(onClick = { isRegisterMode = !isRegisterMode }) {
             Text(
-                text = if (isRegisterMode) "Masz już konto? Zaloguj się" else "Nie masz konta? Zarejestruj się",
+                text = if (isRegisterMode) "Already have an account? Log in" else "Don't have an account? Sign up",
                 color = Color(0xFF111111)
             )
         }

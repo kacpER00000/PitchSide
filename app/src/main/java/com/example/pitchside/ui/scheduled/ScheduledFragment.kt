@@ -81,7 +81,7 @@ fun ScheduledScreen(viewModel: ScheduledViewModel, onMatchClick: (Int) -> Unit) 
         }
 
         is Resource.Error -> {
-            Toast.makeText(LocalContext.current, "Wystąpił błąd podczas pobierania danych.", Toast.LENGTH_LONG).show()
+            Toast.makeText(LocalContext.current, "An error occurred while fetching data.", Toast.LENGTH_LONG).show()
         }
 
         is Resource.Success -> {
@@ -115,7 +115,7 @@ fun ScheduledHeader() {
         contentAlignment = Alignment.CenterStart
     ) {
         Text(
-            text = "Zaplanowane mecze",
+            text = "Scheduled matches",
             color = Color(0xFFD4AF37),
             modifier = Modifier.padding(start = 16.dp),
             fontWeight = FontWeight.Bold
@@ -175,7 +175,7 @@ fun MatchItem(
                 IconButton(onClick = { onFavoriteToggle(match) }) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                        contentDescription = "Ulubione",
+                        contentDescription = "Favorites",
                         tint = if (isFavorite) Color(0xFFD4AF37) else Color.White
                     )
                 }

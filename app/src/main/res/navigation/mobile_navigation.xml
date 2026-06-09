@@ -15,31 +15,31 @@
     <fragment
         android:id="@+id/favouriteFragment"
         android:name="com.example.pitchside.ui.favourite.FavouriteFragment"
-        android:label="Ulubione"
+        android:label="Favorites"
         tools:layout="@layout/fragment_favourite" />
 
     <fragment
         android:id="@+id/scheduledFragment"
         android:name="com.example.pitchside.ui.scheduled.ScheduledFragment"
-        android:label="Zaplanowane"
+        android:label="Scheduled"
         tools:layout="@layout/fragment_scheduled" />
 
     <fragment
         android:id="@+id/loginFragment"
         android:name="com.example.pitchside.ui.login.LoginFragment"
-        android:label="Logowanie"
+        android:label="Log in"
         tools:layout="@layout/fragment_login" />
 
     <fragment
         android:id="@+id/registerFragment"
         android:name="com.example.pitchside.ui.register.RegisterFragment"
-        android:label="Rejestracja"
+        android:label="Sign up"
         tools:layout="@layout/fragment_register" />
 
     <fragment
         android:id="@+id/competitionDetailsFragment"
         android:name="com.example.pitchside.ui.details.CompetitionDetailsFragment"
-        android:label="Szczegóły ligi">
+        android:label="League details">
         <argument
             android:name="competitionCode"
             app:argType="string" />
@@ -48,13 +48,13 @@
     <fragment
         android:id="@+id/accountFragment"
         android:name="com.example.pitchside.ui.account.AccountFragment"
-        android:label="Konto"
+        android:label="Account"
         tools:layout="@layout/fragment_account" />
 
     <fragment
         android:id="@+id/matchDetailsFragment"
         android:name="com.example.pitchside.ui.details.MatchDetailsFragment"
-        android:label="Szczegóły meczu">
+        android:label="Match details">
         <argument
             android:name="matchId"
             app:argType="integer" />

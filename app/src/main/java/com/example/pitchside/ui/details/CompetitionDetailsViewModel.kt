@@ -74,7 +74,7 @@ class CompetitionDetailsViewModel(application: Application) : AndroidViewModel(a
 
 
     val standingsByGroups = standing.mapResource { tabele ->
-        tabele.groupBy { it.group ?: "Tabela" }.toSortedMap()
+        tabele.groupBy { it.group ?: "Table" }.toSortedMap()
     }
 
 

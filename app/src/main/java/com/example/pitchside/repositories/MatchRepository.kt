@@ -93,7 +93,7 @@ class MatchRepository(
         map<T, Resource<T>> { Resource.Success(it) }
             .onStart { emit(Resource.Loading) }
             .catch { e ->
-                emit(Resource.Error(message = e.localizedMessage ?: "Wystapil nieznany blad", exception = Exception(e)))
+                emit(Resource.Error(message = e.localizedMessage ?: "An unknown error occurred", exception = Exception(e)))
             }
 
 }

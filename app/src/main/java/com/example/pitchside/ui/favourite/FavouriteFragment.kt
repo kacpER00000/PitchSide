@@ -85,7 +85,7 @@ fun FavouriteScreen(
 
     LaunchedEffect(favoriteMatchesState) {
         if (favoriteMatchesState is Resource.Error) {
-            Toast.makeText(context, "Wystapil blad podczas pobierania danych.", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "An error occurred while fetching data.", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -94,13 +94,13 @@ fun FavouriteScreen(
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(20.dp)) {
                     Text(
-                        text = "Zaloguj się, aby móc dodawać mecze lub ligi do ulubionych.",
+                        text = "Log in to add matches or leagues to favorites.",
                         color = Color(0xFF111111),
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = "Zaloguj się teraz",
+                        text = "Log in now",
                         color = Color(0xFFD4AF37),
                         textDecoration = TextDecoration.Underline,
                         modifier = Modifier.clickable { onLoginClick() }
@@ -117,7 +117,7 @@ fun FavouriteScreen(
 
                 is Resource.Error -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = "Nie udalo sie pobrac ulubionych.", color = Color(0xFF111111))
+                        Text(text = "Could not load favorites.", color = Color(0xFF111111))
                     }
                 }
 
@@ -125,7 +125,7 @@ fun FavouriteScreen(
                     val favoriteMatches = favoriteMatchesState.data
                     if (favoriteMatches.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text(text = "Brak ulubionych.", color = Color(0xFF111111))
+                            Text(text = "No favorites yet.", color = Color(0xFF111111))
                         }
                     } else {
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -197,8 +197,8 @@ fun FavoriteItem(favorite: Favorite, onDelete: () -> Unit, onItemClick: () -> Un
                     CrestAsyncImageSmall(favorite.emblem_ligi ?: "", "")
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text(text = favorite.nazwa_ligi ?: "Liga", color = Color(0xFFD4AF37))
-                        Text(text = "Liga", color = Color(0xFFD4AF37), style = MaterialTheme.typography.bodySmall)
+                        Text(text = favorite.nazwa_ligi ?: "League", color = Color(0xFFD4AF37))
+                        Text(text = "League", color = Color(0xFFD4AF37), style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }

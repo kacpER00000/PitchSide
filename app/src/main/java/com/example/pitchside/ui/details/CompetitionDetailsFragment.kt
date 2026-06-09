@@ -102,7 +102,7 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
     val hasError by viewModel.error.observeAsState(false)
     val isFetching by viewModel.isFetching.observeAsState(false)
     val context = LocalContext.current
-    val tabs = listOf("Przyszłe mecze", "Tabela", "Strzelcy", "Wyniki")
+    val tabs = listOf("Upcoming matches", "Table", "Scorers", "Results")
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val hasResourceError = leagueInfoState is Resource.Error ||
@@ -121,7 +121,7 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
         if (hasError || hasResourceError) {
             Toast.makeText(
                 context,
-                "Wystąpił błąd podczas pobierania danych.",
+                "An error occurred while fetching data.",
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -144,7 +144,7 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
             modifier = Modifier.fillMaxSize().background(Color.White),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = "Nie udalo sie pobrac danych.", color = Color(0xFF111111))
+            Text(text = "Could not load data.", color = Color(0xFF111111))
         }
     } else if (
         leagueInfoState is Resource.Success &&
@@ -216,7 +216,7 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
                         IconButton(onClick = { viewModel.toggleFavorite() }) {
                             Icon(
                                 imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                                contentDescription = "Ulubiona liga",
+                                contentDescription = "Favorite league",
                                 tint = if (isFavorite) Color(0xFFD4AF37) else Color.White,
                                 modifier = Modifier.size(32.dp)
                             )
@@ -297,10 +297,10 @@ fun MatchesList(finishedMatches: Map<Int, List<MatchDao.MatchWithTeams>>, onMatc
                 ) {
                     Text(
                         text = when(matchday){
-                            100 -> "Finał"
-                            99 -> "Półfinał"
-                            98 -> "Ćwierćfinał"
-                            else -> "Kolejka $matchday"
+                            100 -> "Final"
+                            99 -> "Semi-final"
+                            98 -> "Quarter-final"
+                            else -> "Matchday $matchday"
                         },
                         color = Color(0xFF111111),
                         modifier = Modifier.padding(start = 10.dp)
@@ -430,7 +430,7 @@ fun StandingList(standing: Map<String, List<LeagueTableDao.LeagueTableWithTeam>>
                 )
                 Spacer(modifier = Modifier.width(18.dp))
                 Text(
-                    text = "Drużyna",
+                    text = "Team",
                     color = Color(0xFF111111),
                     modifier = Modifier.width(60.dp)
                 )
@@ -441,17 +441,17 @@ fun StandingList(standing: Map<String, List<LeagueTableDao.LeagueTableWithTeam>>
                     .padding(end = 15.dp)
             ) {
                 Text(
-                    text = "M",
+                    text = "Pld",
                     color = Color(0xFF111111)
                 )
                 Spacer(modifier = Modifier.width(32.dp))
                 Text(
-                    text = "B",
+                    text = "G",
                     color = Color(0xFF111111),
                 )
                 Spacer(modifier = Modifier.width(45.dp))
                 Text(
-                    text = "P",
+                    text = "Pts",
                     color = Color(0xFF111111),
                 )
             }
@@ -560,7 +560,7 @@ fun TopScorersList(scorers: List<LeagueScorerDao.LeagueScorerWithTeam>) {
                 )
                 Spacer(modifier = Modifier.width(18.dp))
                 Text(
-                    text = "Zawodnik",
+                    text = "Player",
                     color = Color(0xFF111111),
                     modifier = Modifier.width(60.dp)
                 )
@@ -571,7 +571,7 @@ fun TopScorersList(scorers: List<LeagueScorerDao.LeagueScorerWithTeam>) {
                     .padding(end = 13.dp)
             ) {
                 Text(
-                    text = "B",
+                    text = "G",
                     color = Color(0xFF111111)
                 )
                 Spacer(modifier = Modifier.width(20.dp))

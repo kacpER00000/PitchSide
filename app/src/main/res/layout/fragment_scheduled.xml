@@ -17,7 +17,7 @@
             android:background="@color/logo_black"
             android:gravity="center"
             android:paddingLeft="10dp"
-            android:text="Zaplanowane mecze"
+            android:text="Scheduled matches"
             android:textAlignment="textStart"
             android:textColor="@color/logo_gold"
             app:layout_constraintEnd_toEndOf="parent"

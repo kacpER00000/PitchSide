@@ -19,14 +19,14 @@ class FavouriteViewModel(application: Application) : AndroidViewModel(applicatio
     private val dao = AppDatabase.getDatabase(application).favoriteDao()
     private val userId = SessionManager.loggedInUser?.uzytkownik_id ?: -1
 
-    // Funkcja sprawdzająca status logowania
+    // Checks whether the user is logged in.
     fun isLoggedIn(): Boolean = SessionManager.isLoggedIn()
 
     val favoriteMatches: StateFlow<Resource<List<Favorite>>> = dao.pobierzWszystkieUlubione(userId)
         .map<List<Favorite>, Resource<List<Favorite>>> { Resource.Success(it) }
         .onStart { emit(Resource.Loading) }
         .catch { e ->
-            emit(Resource.Error(message = e.localizedMessage ?: "Wystapil nieznany blad", exception = Exception(e)))
+            emit(Resource.Error(message = e.localizedMessage ?: "An unknown error occurred", exception = Exception(e)))
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Resource.Loading)
 

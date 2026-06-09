@@ -61,7 +61,7 @@ class AccountFragment : Fragment() {
 
         LaunchedEffect(success) {
             if (success) {
-                Toast.makeText(context, "Dane zaktualizowane!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Account updated!", Toast.LENGTH_SHORT).show()
                 viewModel.updateSuccess.value = false
             }
         }
@@ -87,7 +87,7 @@ class AccountFragment : Fragment() {
             CustomTextField(
                 value = nowaNazwa,
                 onValueChange = { nowaNazwa = it },
-                label = "Nazwa użytkownika"
+                label = "Username"
             )
 
             Button(
@@ -102,7 +102,7 @@ class AccountFragment : Fragment() {
                     contentColor = Color(0xFF111111)
                 )
             ) {
-                Text("Zapisz zmiany")
+                Text("Save changes")
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -115,7 +115,7 @@ class AccountFragment : Fragment() {
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB03030))
             ) {
-                Text("Wyloguj się", color = Color.White)
+                Text("Log out", color = Color.White)
             }
 
             Spacer(modifier = Modifier.height(32.dp))

@@ -22,7 +22,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                 com.example.pitchside.managers.SessionManager.loggedInUser = user
                 isSuccess.value = true
             } else {
-                error.value = "Błędny login lub hasło"
+                error.value = "Invalid username or password"
             }
         }
     }
@@ -34,7 +34,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                 userDao.zarejestruj(newUser)
                 isSuccess.value = true
             } catch (e: Exception) {
-                error.value = "Użytkownik o takim emailu już istnieje"
+                error.value = "A user with this email already exists"
             }
         }
     }

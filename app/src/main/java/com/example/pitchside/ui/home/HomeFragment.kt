@@ -113,7 +113,7 @@ fun HomeScreen(viewModel: HomeViewModel, onLeagueClick: (String) -> Unit, onMatc
         }
 
         hasError || matches is Resource.Error || competitions is Resource.Error -> {
-            Toast.makeText(LocalContext.current, "Wystąpił błąd podczas pobierania danych.", Toast.LENGTH_LONG).show()
+            Toast.makeText(LocalContext.current, "An error occurred while fetching data.", Toast.LENGTH_LONG).show()
         }
 
         matches is Resource.Success && competitions is Resource.Success -> {
@@ -164,9 +164,9 @@ fun SearchBarWithDropdown(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp),
-            placeholder = { Text(text = "Wyszukaj ligę...") },
+            placeholder = { Text(text = "Search for a league...") },
             leadingIcon = {
-                Icon(imageVector = Icons.Default.Search, contentDescription = "Ikona szukania", tint = Color(0xFF111111))
+                Icon(imageVector = Icons.Default.Search, contentDescription = "Search icon", tint = Color(0xFF111111))
             },
             trailingIcon = {
                 if (query.isNotEmpty()) {
@@ -174,7 +174,7 @@ fun SearchBarWithDropdown(
                         query = ""
                         dropdownExpanded = false
                     }) {
-                        Icon(imageVector = Icons.Default.Clear, contentDescription = "Wyczyść", tint = Color(0xFF111111))
+                        Icon(imageVector = Icons.Default.Clear, contentDescription = "Clear", tint = Color(0xFF111111))
                     }
                 }
             },
@@ -218,7 +218,7 @@ fun SearchBarWithDropdown(
                                 modifier = Modifier.size(30.dp)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
-                            Text(text = league.nazwa_ligi ?: "Nieznana", color = Color.Black)
+                            Text(text = league.nazwa_ligi ?: "Unknown", color = Color.Black)
                         }
                         Divider(color = Color.LightGray, thickness = 0.5.dp)
                     }
@@ -265,7 +265,7 @@ fun HomeScreenContent(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Ligi", color = Color(0xFFD4AF37))
+                Text(text = "Leagues", color = Color(0xFFD4AF37))
                 Icon(
                     painter = painterResource(
                         if (competitionsExpanded) R.drawable.outline_arrow_circle_up_24
@@ -297,7 +297,7 @@ fun HomeScreenContent(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Zaplanowane mecze", color = Color(0xFFD4AF37))
+                Text(text = "Scheduled matches", color = Color(0xFFD4AF37))
                 Icon(
                     painter = painterResource(
                         if (matchesExpanded) R.drawable.outline_arrow_circle_up_24
@@ -368,7 +368,7 @@ fun CompetitionItem(
                 IconButton(onClick = { onFavoriteToggle(competition) }) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                        contentDescription = "Ulubione",
+                        contentDescription = "Favorites",
                         tint = if (isFavorite) Color(0xFFD4AF37) else Color.White
                     )
                 }
@@ -433,7 +433,7 @@ fun MatchItem(
                 IconButton(onClick = { onFavoriteToggle(match) }) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                        contentDescription = "Ulubione",
+                        contentDescription = "Favorites",
                         tint = if (isFavorite) Color(0xFFD4AF37) else Color.White
                     )
                 }

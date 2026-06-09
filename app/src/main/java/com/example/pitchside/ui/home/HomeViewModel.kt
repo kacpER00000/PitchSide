@@ -115,7 +115,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     matchRepository.refreshData()
                 }
             } catch (e: Exception) {
-                Log.e("HomeViewModel", "Błąd bazy danych: ${e.message}")
+                Log.e("HomeViewModel", "Database error: ${e.message}")
                 _error.postValue(true)
             } finally {
                 _isFetching.value = false

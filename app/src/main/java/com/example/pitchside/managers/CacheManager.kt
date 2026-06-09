@@ -2,7 +2,7 @@ package com.example.pitchside.managers
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.core.content.edit // Upewnij się, że masz ten import!
+import androidx.core.content.edit
 
 class CacheManager(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(

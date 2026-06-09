@@ -19,15 +19,15 @@ class AccountViewModel(application: Application) : AndroidViewModel(application)
 
         viewModelScope.launch {
             try {
-                // Tworzymy kopię usera z nową nazwą
+                // Create a copy of the user with the new username.
                 val updatedUser = currentUser.copy(nazwa_uzytkownika = nowaNazwa)
                 userDao.aktualizuj(updatedUser)
 
-                // AKTUALIZACJA SESJI - to jest kluczowe!
+                // Keep the session in sync with the database update.
                 SessionManager.loggedInUser = updatedUser
                 updateSuccess.value = true
             } catch (e: Exception) {
-                error.value = "Nie udało się zmienić nazwy"
+                error.value = "Could not change username"
             }
         }
     }

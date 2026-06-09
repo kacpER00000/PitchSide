@@ -51,7 +51,7 @@ class MatchDetailsFragment : Fragment() {
                     if (match is Resource.Error) {
                         Toast.makeText(
                             context,
-                            "Wystapil blad podczas pobierania danych.",
+                            "An error occurred while fetching data.",
                             Toast.LENGTH_LONG
                         ).show()
                     }
@@ -67,7 +67,7 @@ class MatchDetailsFragment : Fragment() {
                         }
 
                         is Resource.Error -> {
-                            Text(text = "Nie udalo sie pobrac danych meczu.", color = Color(0xFF111111))
+                            Text(text = "Could not load match data.", color = Color(0xFF111111))
                         }
 
                         is Resource.Success -> {
@@ -95,7 +95,7 @@ class MatchDetailsFragment : Fragment() {
                                         IconButton(onClick = { viewModel.toggleFavorite() }) {
                                             Icon(
                                                 imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                                                contentDescription = "Ulubiony mecz",
+                                                contentDescription = "Favorite match",
                                                 tint = if (isFavorite) Color(0xFFD4AF37) else Color(0xFF111111),
                                                 modifier = Modifier.size(32.dp)
                                             )
@@ -140,18 +140,18 @@ class MatchDetailsFragment : Fragment() {
                                     colors = CardDefaults.cardColors(containerColor = Color(0xFF111111))
                                 ) {
                                     Column(modifier = Modifier.padding(16.dp)) {
-                                        DetailRow("Data", m.startDate?.take(10) ?: "-")
+                                        DetailRow("Date", m.startDate?.take(10) ?: "-")
 
                                         val displayStatus = when(m.status) {
-                                            "TIMED" -> "Zaplanowany"
-                                            "SCHEDULED" -> "Zaplanowany"
-                                            "FINISHED" -> "Zakończony"
-                                            "IN_PLAY" -> "W trakcie"
+                                            "TIMED" -> "Scheduled"
+                                            "SCHEDULED" -> "Scheduled"
+                                            "FINISHED" -> "Finished"
+                                            "IN_PLAY" -> "In progress"
                                             else -> m.status
                                         }
                                         DetailRow("Status", displayStatus)
 
-                                        DetailRow("Sędzia", m.referee ?: "Brak danych")
+                                        DetailRow("Referee", m.referee ?: "No data")
                                     }
                                 }
                             }
