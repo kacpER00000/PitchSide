@@ -25,11 +25,11 @@ interface MatchDao{
     @Upsert
     suspend fun insertMatches(matches: List<Match>)
 
-    @Query("DELETE FROM Mecze WHERE status IN ('SCHEDULED', 'TIMED')")
+    @Query("DELETE FROM Mecze WHERE status IN ('TIMED', 'SCHEDULED')")
     suspend fun clearOnlyScheduledMatches()
 
-    @Query("SELECT COUNT(*) FROM Mecze")
-    suspend fun getMatchCount(): Int
+    @Query("SELECT COUNT(*) FROM Mecze m WHERE m.status IN ('TIMED', 'SCHEDULED') AND m.id_gospodarza != 0 AND m.id_goscia != 0")
+    suspend fun getScheduledMatchCount(): Int
 
 
     @Query("""
@@ -77,10 +77,10 @@ interface MatchDao{
     INNER JOIN Druzyny gospodarz ON m.id_gospodarza = gospodarz.druzyna_id
     INNER JOIN Druzyny gosc ON m.id_goscia = gosc.druzyna_id
     INNER JOIN Ligi l ON m.liga_id = l.liga_id
-    WHERE m.status = :status AND m.id_gospodarza != 0 AND m.id_goscia != 0
+    WHERE m.status IN ('TIMED', 'SCHEDULED') AND m.id_gospodarza != 0 AND m.id_goscia != 0
     ORDER BY m.data_meczu ASC
 """)
-    fun getStatusMatchesWithTeams(status: String): Flow<List<MatchWithTeams>>
+    fun getScheduledMatchesWithTeams(): Flow<List<MatchWithTeams>>
 
 
     @Query("""

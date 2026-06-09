@@ -23,6 +23,7 @@ import com.example.pitchside.data.League
 import com.example.pitchside.data.LeagueScorerDao
 import com.example.pitchside.data.LeagueTableDao
 import com.example.pitchside.data.MatchDao.MatchWithTeams
+import com.example.pitchside.data.Resource
 import com.example.pitchside.managers.CacheManager
 import com.example.pitchside.managers.RetrofitManager
 import com.example.pitchside.managers.SessionManager
@@ -43,36 +44,36 @@ class CompetitionDetailsViewModel(application: Application) : AndroidViewModel(a
     private val matchRepository = MatchRepository(db.matchDao(), db.teamDao(), matchesAPI)
     private val competitionAPI = RetrofitManager.create<CompetitionAPI>()
     private val leagueRepository = LeagueRepository(competitionAPI, db.leagueDao(), db.leagueTableDao(), db.leagueScorerDao())
-    val scheduled: LiveData<List<MatchWithTeams>> = competitionCode.switchMap { code ->
+    val scheduled: LiveData<Resource<List<MatchWithTeams>>> = competitionCode.switchMap { code ->
         matchRepository.getStatusMatchesForLeague(code, "TIMED").asLiveData()
     }
 
-    val finished: LiveData<List<MatchWithTeams>> = competitionCode.switchMap { code ->
+    val finished: LiveData<Resource<List<MatchWithTeams>>> = competitionCode.switchMap { code ->
         matchRepository.getStatusMatchesForLeague(code, "FINISHED").asLiveData()
     }
 
-    val standing: LiveData<List<LeagueTableDao.LeagueTableWithTeam>> = competitionCode.switchMap { code ->
+    val standing: LiveData<Resource<List<LeagueTableDao.LeagueTableWithTeam>>> = competitionCode.switchMap { code ->
         leagueRepository.getStandingForLeague(code).asLiveData()
     }
 
-    val scorers: LiveData<List<LeagueScorerDao.LeagueScorerWithTeam>> = competitionCode.switchMap { code ->
+    val scorers: LiveData<Resource<List<LeagueScorerDao.LeagueScorerWithTeam>>> = competitionCode.switchMap { code ->
         leagueRepository.getLeagueScorersForLeague(code).asLiveData()
     }
 
-    val leagueInfo: LiveData<League> = competitionCode.switchMap { code ->
+    val leagueInfo: LiveData<Resource<League>> = competitionCode.switchMap { code ->
         leagueRepository.getLeagueByLeagueCode(code).asLiveData()
     }
 
     private val favoriteDao = AppDatabase.getDatabase(application).favoriteDao()
-    val scheduledMatchesByMatchday = scheduled.map { matches ->
+    val scheduledMatchesByMatchday = scheduled.mapResource { matches ->
         matches.groupBy { getStageOrder(it) }.toSortedMap()
     }
-    val finishedMatchesByMatchday = finished.map { matches ->
+    val finishedMatchesByMatchday = finished.mapResource { matches ->
         matches.groupBy { getStageOrder(it) }.toSortedMap()
     }
 
 
-    val standingsByGroups = standing.map { tabele ->
+    val standingsByGroups = standing.mapResource { tabele ->
         tabele.groupBy { it.group ?: "Tabela" }.toSortedMap()
     }
 
@@ -104,18 +105,19 @@ class CompetitionDetailsViewModel(application: Application) : AndroidViewModel(a
     fun toggleFavorite() {
         val user = SessionManager.loggedInUser ?: return
         val code = competitionCode.value ?: return
+        val league = (leagueInfo.value as? Resource.Success)?.data ?: return
 
         viewModelScope.launch {
             val isFav = _isFavorite.value ?: false
             if (isFav) {
-                favoriteDao.usunZUlubionych(user.uzytkownik_id, "LIGA", leagueInfo.value.liga_id)
+                favoriteDao.usunZUlubionych(user.uzytkownik_id, "LIGA", league.liga_id)
             } else {
                 val newFav = Favorite(
                     uzytkownik_id = user.uzytkownik_id,
                     typ_obiektu = "LIGA",
-                    obiekt_id = leagueInfo.value.liga_id,
-                    nazwa_ligi = leagueInfo.value.nazwa_ligi,
-                    emblem_ligi = leagueInfo.value.emblemat_ligi,
+                    obiekt_id = league.liga_id,
+                    nazwa_ligi = league.nazwa_ligi,
+                    emblem_ligi = league.emblemat_ligi,
                     kod_ligi = code
                 )
                 favoriteDao.dodajDoUlubionych(newFav)
@@ -152,4 +154,13 @@ class CompetitionDetailsViewModel(application: Application) : AndroidViewModel(a
             else -> match.matchday
         }
     }
+
+    private fun <T, R> LiveData<Resource<T>>.mapResource(transform: (T) -> R): LiveData<Resource<R>> =
+        map { resource ->
+            when (resource) {
+                Resource.Loading -> Resource.Loading
+                is Resource.Error -> Resource.Error(resource.message, resource.exception)
+                is Resource.Success -> Resource.Success(transform(resource.data))
+            }
+        }
 }

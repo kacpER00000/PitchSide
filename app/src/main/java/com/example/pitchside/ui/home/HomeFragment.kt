@@ -38,6 +38,7 @@ import coil.request.ImageRequest
 import com.example.pitchside.R
 import com.example.pitchside.data.League
 import com.example.pitchside.data.MatchDao
+import com.example.pitchside.data.Resource
 import com.example.pitchside.managers.SessionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -88,25 +89,48 @@ class HomeFragment : Fragment() {
 
 @Composable
 fun HomeScreen(viewModel: HomeViewModel, onLeagueClick: (String) -> Unit, onMatchClick: (Int) -> Unit) {
-    val matches by viewModel.scheduled.observeAsState(emptyList())
-    val competitions by viewModel.competitions.observeAsState(emptyList())
+    val matches = viewModel.scheduled.observeAsState(initial = Resource.Loading).value
+    val competitions = viewModel.competitions.observeAsState(initial = Resource.Loading).value
     val favoriteIds by viewModel.favoriteIds.observeAsState(emptySet())
     val favoriteLeagueIds by viewModel.favoriteLeagueIds.observeAsState(emptySet())
-    val hasError by viewModel.error.observeAsState(false)
     val isFetching by viewModel.isFetching.observeAsState(false)
+    val hasError by viewModel.error.observeAsState(false)
 
-    HomeScreenContent(
-        matches = matches,
-        competitions = competitions,
-        favoriteIds = favoriteIds,
-        favoriteLeagueIds = favoriteLeagueIds,
-        hasError = hasError,
-        isFetching = isFetching,
-        onLeagueClick = onLeagueClick,
-        onMatchClick = onMatchClick,
-        onFavoriteToggle = { match -> viewModel.toggleFavorite(match) },
-        onLeagueFavoriteToggle = { competition -> viewModel.toggleFavoriteLeague(competition) }
-    )
+
+    when {
+        isFetching || matches is Resource.Loading || competitions is Resource.Loading -> {
+            Box(
+                modifier = Modifier.fillMaxSize().background(Color.White),
+                contentAlignment = Alignment.Center
+
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.width(64.dp),
+                    color = Color(0xFFD4AF37),
+                    trackColor = Color(0xFF111111),
+                )
+            }
+        }
+
+        hasError || matches is Resource.Error || competitions is Resource.Error -> {
+            Toast.makeText(LocalContext.current, "Wystąpił błąd podczas pobierania danych.", Toast.LENGTH_LONG).show()
+        }
+
+        matches is Resource.Success && competitions is Resource.Success -> {
+            HomeScreenContent(
+                matches = matches.data,
+                competitions = competitions.data,
+                favoriteIds = favoriteIds,
+                favoriteLeagueIds = favoriteLeagueIds,
+                onLeagueClick = onLeagueClick,
+                onMatchClick = onMatchClick,
+                onFavoriteToggle = { match -> viewModel.toggleFavorite(match) },
+                onLeagueFavoriteToggle = { competition -> viewModel.toggleFavoriteLeague(competition) }
+            )
+        }
+    }
+
+
 }
 
 @Composable
@@ -210,22 +234,13 @@ fun HomeScreenContent(
     competitions: List<League>,
     favoriteIds: Set<Int>,
     favoriteLeagueIds: Set<Int>,
-    hasError: Boolean,
-    isFetching: Boolean,
     onLeagueClick: (String) -> Unit,
     onMatchClick: (Int) -> Unit,
     onFavoriteToggle: (MatchDao.MatchWithTeams) -> Unit,
     onLeagueFavoriteToggle: (League) -> Unit
 ) {
-    val context = LocalContext.current
     var competitionsExpanded by remember { mutableStateOf(false) }
     var matchesExpanded by remember { mutableStateOf(false) }
-
-    LaunchedEffect(hasError) {
-        if (hasError) {
-            Toast.makeText(context, "Wystąpił błąd podczas pobierania danych.", Toast.LENGTH_LONG).show()
-        }
-    }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
@@ -236,73 +251,66 @@ fun HomeScreenContent(
             competitions = competitions,
             onLeagueClick = onLeagueClick
         )
-
-        if (isFetching) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color(0xFFD4AF37))
-            }
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(51.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFF111111))
-                    .clickable { competitionsExpanded = !competitionsExpanded },
-                contentAlignment = Alignment.CenterStart,
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(51.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0xFF111111))
+                .clickable { competitionsExpanded = !competitionsExpanded },
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = "Ligi", color = Color(0xFFD4AF37))
-                    Icon(
-                        painter = painterResource(
-                            if (competitionsExpanded) R.drawable.outline_arrow_circle_up_24
-                            else R.drawable.outline_arrow_circle_down_24
-                        ),
-                        contentDescription = null,
-                        tint = Color(0xFFD4AF37)
-                    )
-                }
+                Text(text = "Ligi", color = Color(0xFFD4AF37))
+                Icon(
+                    painter = painterResource(
+                        if (competitionsExpanded) R.drawable.outline_arrow_circle_up_24
+                        else R.drawable.outline_arrow_circle_down_24
+                    ),
+                    contentDescription = null,
+                    tint = Color(0xFFD4AF37)
+                )
             }
+        }
 
-            if (competitionsExpanded) {
-                Box(modifier = Modifier.heightIn(max = 300.dp)) {
-                    CompetitionsList(competitions, onLeagueClick, favoriteLeagueIds, onLeagueFavoriteToggle)
-                }
+        if (competitionsExpanded) {
+            Box(modifier = Modifier.heightIn(max = 300.dp)) {
+                CompetitionsList(competitions, onLeagueClick, favoriteLeagueIds, onLeagueFavoriteToggle)
             }
+        }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(51.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFF111111))
-                    .clickable { matchesExpanded = !matchesExpanded },
-                contentAlignment = Alignment.CenterStart,
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(51.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0xFF111111))
+                .clickable { matchesExpanded = !matchesExpanded },
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = "Zaplanowane mecze", color = Color(0xFFD4AF37))
-                    Icon(
-                        painter = painterResource(
-                            if (matchesExpanded) R.drawable.outline_arrow_circle_up_24
-                            else R.drawable.outline_arrow_circle_down_24
-                        ),
-                        contentDescription = null,
-                        tint = Color(0xFFD4AF37)
-                    )
-                }
+                Text(text = "Zaplanowane mecze", color = Color(0xFFD4AF37))
+                Icon(
+                    painter = painterResource(
+                        if (matchesExpanded) R.drawable.outline_arrow_circle_up_24
+                        else R.drawable.outline_arrow_circle_down_24
+                    ),
+                    contentDescription = null,
+                    tint = Color(0xFFD4AF37)
+                )
             }
-            if (matchesExpanded) {
-                Box(modifier = Modifier.heightIn(max = 400.dp)) {
-                    MatchesList(matches, favoriteIds, onMatchClick, onFavoriteToggle)
-                }
+        }
+        if (matchesExpanded) {
+            Box(modifier = Modifier.heightIn(max = 400.dp)) {
+                MatchesList(matches, favoriteIds, onMatchClick, onFavoriteToggle)
             }
         }
     }

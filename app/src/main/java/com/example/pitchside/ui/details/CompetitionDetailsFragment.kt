@@ -62,6 +62,7 @@ import com.example.pitchside.R
 import com.example.pitchside.data.LeagueScorerDao
 import com.example.pitchside.data.LeagueTableDao
 import com.example.pitchside.data.MatchDao
+import com.example.pitchside.data.Resource
 import com.example.pitchside.managers.SessionManager
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
@@ -93,20 +94,31 @@ class CompetitionDetailsFragment : Fragment() {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClick: (Int) -> Unit) {
-    val leagueInfo by viewModel.leagueInfo.observeAsState()
-    val standing by viewModel.standingsByGroups.observeAsState()
-    val scheduled by viewModel.scheduledMatchesByMatchday.observeAsState()
-    val finished by viewModel.finishedMatchesByMatchday.observeAsState()
-    val scorers by viewModel.scorers.observeAsState()
+    val leagueInfoState = viewModel.leagueInfo.observeAsState(initial = Resource.Loading).value
+    val standingState = viewModel.standingsByGroups.observeAsState(initial = Resource.Loading).value
+    val scheduledState = viewModel.scheduledMatchesByMatchday.observeAsState(initial = Resource.Loading).value
+    val finishedState = viewModel.finishedMatchesByMatchday.observeAsState(initial = Resource.Loading).value
+    val scorersState = viewModel.scorers.observeAsState(initial = Resource.Loading).value
     val hasError by viewModel.error.observeAsState(false)
     val isFetching by viewModel.isFetching.observeAsState(false)
     val context = LocalContext.current
     val tabs = listOf("Przyszłe mecze", "Tabela", "Strzelcy", "Wyniki")
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val hasResourceError = leagueInfoState is Resource.Error ||
+            standingState is Resource.Error ||
+            scheduledState is Resource.Error ||
+            finishedState is Resource.Error ||
+            scorersState is Resource.Error
+    val isLoading = isFetching ||
+            leagueInfoState is Resource.Loading ||
+            standingState is Resource.Loading ||
+            scheduledState is Resource.Loading ||
+            finishedState is Resource.Loading ||
+            scorersState is Resource.Loading
 
-    LaunchedEffect(hasError) {
-        if (hasError) {
+    LaunchedEffect(hasError, hasResourceError) {
+        if (hasError || hasResourceError) {
             Toast.makeText(
                 context,
                 "Wystąpił błąd podczas pobierania danych.",
@@ -115,7 +127,7 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
         }
     }
 
-    if (isFetching) {
+    if (isLoading) {
         Box(
             modifier = Modifier.fillMaxSize().background(Color.White),
             contentAlignment = Alignment.Center
@@ -127,7 +139,26 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
                 trackColor = Color(0xFF111111),
             )
         }
-    } else {
+    } else if (hasResourceError) {
+        Box(
+            modifier = Modifier.fillMaxSize().background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = "Nie udalo sie pobrac danych.", color = Color(0xFF111111))
+        }
+    } else if (
+        leagueInfoState is Resource.Success &&
+        standingState is Resource.Success &&
+        scheduledState is Resource.Success &&
+        finishedState is Resource.Success &&
+        scorersState is Resource.Success
+    ) {
+        val leagueInfo = leagueInfoState.data
+        val standing = standingState.data
+        val scheduled = scheduledState.data
+        val finished = finishedState.data
+        val scorers = scorersState.data
+
         Column(
             modifier = Modifier.fillMaxSize().background(Color.White),
         ) {
@@ -141,19 +172,19 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val flagModel = if (leagueInfo?.flaga_kraju.isNullOrBlank()) {
+                    val flagModel = if (leagueInfo.flaga_kraju.isNullOrBlank()) {
                         "https://publicdomainvectors.org/photos/Anonymous_Flag_of_the_United_Nations.png"
                     } else {
-                        leagueInfo?.flaga_kraju
+                        leagueInfo.flaga_kraju
                     }
                     CrestAsyncImage(
                         flagModel.toString(),
-                        leagueInfo?.kraj ?: "Unknown",
+                        leagueInfo.kraj ?: "Unknown",
                         50
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = leagueInfo?.kraj ?: "Unknown",
+                        text = leagueInfo.kraj ?: "Unknown",
                         color = Color.White.copy(alpha = 0.8f),
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -168,13 +199,13 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     CrestAsyncImage(
-                        leagueInfo?.emblemat_ligi ?: "",
-                        leagueInfo?.nazwa_ligi ?: "Unknown",
+                        leagueInfo.emblemat_ligi ?: "",
+                        leagueInfo.nazwa_ligi,
                         50
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = leagueInfo?.nazwa_ligi ?: "Unknown",
+                        text = leagueInfo.nazwa_ligi,
                         color = Color(0xFFD4AF37),
                         style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.weight(1f)
@@ -224,10 +255,10 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
             }
             Box(modifier = Modifier.fillMaxSize()) {
                 when (selectedTabIndex) {
-                    0 -> ScheduledMatchesContent(scheduled ?: emptyMap(), onMatchClick)
-                    1 -> CompetitionTableContent(standing ?: emptyMap())
-                    2 -> TopScorersList(scorers ?: emptyList())
-                    3 -> ResultsContent(finished ?: emptyMap(), onMatchClick)
+                    0 -> ScheduledMatchesContent(scheduled, onMatchClick)
+                    1 -> CompetitionTableContent(standing)
+                    2 -> TopScorersList(scorers)
+                    3 -> ResultsContent(finished, onMatchClick)
                 }
             }
         }
@@ -236,13 +267,13 @@ fun CompetitionDetailsScreen(viewModel: CompetitionDetailsViewModel, onMatchClic
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ScheduledMatchesContent(scheduled: Map<Int?, List<MatchDao.MatchWithTeams>?>, onMatchClick: (Int) -> Unit) {
+fun ScheduledMatchesContent(scheduled: Map<Int, List<MatchDao.MatchWithTeams>>, onMatchClick: (Int) -> Unit) {
     MatchesList(scheduled, onMatchClick)
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ResultsContent(finished: Map<Int?, List<MatchDao.MatchWithTeams>?>, onMatchClick: (Int) -> Unit) {
+fun ResultsContent(finished: Map<Int, List<MatchDao.MatchWithTeams>>, onMatchClick: (Int) -> Unit) {
     MatchesList(finished, onMatchClick)
 }
 
@@ -253,7 +284,7 @@ fun CompetitionTableContent(standing: Map<String, List<LeagueTableDao.LeagueTabl
 
 @Composable
 @RequiresApi(Build.VERSION_CODES.O)
-fun MatchesList(finishedMatches: Map<Int?, List<MatchDao.MatchWithTeams>?>, onMatchClick: (Int) -> Unit) {
+fun MatchesList(finishedMatches: Map<Int, List<MatchDao.MatchWithTeams>>, onMatchClick: (Int) -> Unit) {
     LazyColumn {
         finishedMatches.forEach { (matchday, matches) ->
             item {
@@ -276,10 +307,8 @@ fun MatchesList(finishedMatches: Map<Int?, List<MatchDao.MatchWithTeams>?>, onMa
                     )
                 }
             }
-            if (matches != null) {
-                items(matches) { match ->
-                    MatchItem(match, onMatchClick)
-                }
+            items(matches) { match ->
+                MatchItem(match, onMatchClick)
             }
         }
     }

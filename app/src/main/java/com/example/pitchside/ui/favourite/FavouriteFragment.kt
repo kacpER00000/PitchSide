@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -28,6 +30,7 @@ import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.example.pitchside.R
 import com.example.pitchside.data.Favorite
+import com.example.pitchside.data.Resource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.navigation.fragment.findNavController
@@ -76,8 +79,15 @@ fun FavouriteScreen(
     onMatchClick: (Int) -> Unit,
     onLoginClick: () -> Unit
 ) {
-    val favoriteMatches by viewModel.favoriteMatches.collectAsState()
+    val favoriteMatchesState = viewModel.favoriteMatches.collectAsState().value
     val isLoggedIn = viewModel.isLoggedIn()
+    val context = LocalContext.current
+
+    LaunchedEffect(favoriteMatchesState) {
+        if (favoriteMatchesState is Resource.Error) {
+            Toast.makeText(context, "Wystapil blad podczas pobierania danych.", Toast.LENGTH_LONG).show()
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(Color.White).padding(16.dp)) {
         if (!isLoggedIn) {
@@ -97,24 +107,43 @@ fun FavouriteScreen(
                     )
                 }
             }
-        } else if (favoriteMatches.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(text = "Brak ulubionych.", color = Color(0xFF111111))
-            }
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(favoriteMatches) { favorite ->
-                    FavoriteItem(
-                        favorite = favorite,
-                        onDelete = { viewModel.usunUlubione(favorite) },
-                        onItemClick = {
-                            if (favorite.typ_obiektu == "LIGA") {
-                                favorite.kod_ligi?.let { onLeagueClick(it) }
-                            } else if (favorite.typ_obiektu == "MECZ") {
-                                favorite.obiekt_id?.let { onMatchClick(it) }
+            when (favoriteMatchesState) {
+                is Resource.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color(0xFFD4AF37))
+                    }
+                }
+
+                is Resource.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(text = "Nie udalo sie pobrac ulubionych.", color = Color(0xFF111111))
+                    }
+                }
+
+                is Resource.Success -> {
+                    val favoriteMatches = favoriteMatchesState.data
+                    if (favoriteMatches.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(text = "Brak ulubionych.", color = Color(0xFF111111))
+                        }
+                    } else {
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(favoriteMatches) { favorite ->
+                                FavoriteItem(
+                                    favorite = favorite,
+                                    onDelete = { viewModel.usunUlubione(favorite) },
+                                    onItemClick = {
+                                        if (favorite.typ_obiektu == "LIGA") {
+                                            favorite.kod_ligi?.let { onLeagueClick(it) }
+                                        } else if (favorite.typ_obiektu == "MECZ") {
+                                            favorite.obiekt_id?.let { onMatchClick(it) }
+                                        }
+                                    }
+                                )
                             }
                         }
-                    )
+                    }
                 }
             }
         }

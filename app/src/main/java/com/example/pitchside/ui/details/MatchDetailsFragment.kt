@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -16,11 +17,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import com.example.pitchside.data.Resource
 import com.example.pitchside.managers.SessionManager
 
 class MatchDetailsFragment : Fragment() {
@@ -34,8 +37,9 @@ class MatchDetailsFragment : Fragment() {
         val matchId = arguments?.getInt("matchId") ?: -1
         return ComposeView(requireContext()).apply {
             setContent {
-                val match by viewModel.match.observeAsState()
+                val match = viewModel.match.observeAsState(initial = Resource.Loading).value
                 val isFavorite by viewModel.isFavorite.observeAsState(false)
+                val context = LocalContext.current
 
                 LaunchedEffect(matchId) {
                     if (matchId != -1) {
@@ -43,12 +47,31 @@ class MatchDetailsFragment : Fragment() {
                     }
                 }
 
+                LaunchedEffect(match) {
+                    if (match is Resource.Error) {
+                        Toast.makeText(
+                            context,
+                            "Wystapil blad podczas pobierania danych.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
                 Box(
                     modifier = Modifier.fillMaxSize().background(Color.White),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (match != null) {
-                        match?.let { m ->
+                    when (match) {
+                        is Resource.Loading -> {
+                            CircularProgressIndicator(color = Color(0xFFD4AF37))
+                        }
+
+                        is Resource.Error -> {
+                            Text(text = "Nie udalo sie pobrac danych meczu.", color = Color(0xFF111111))
+                        }
+
+                        is Resource.Success -> {
+                            val m = match.data
                             Column(
                                 modifier = Modifier.fillMaxSize().padding(24.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
@@ -133,8 +156,6 @@ class MatchDetailsFragment : Fragment() {
                                 }
                             }
                         }
-                    } else {
-                        CircularProgressIndicator(color = Color(0xFFD4AF37))
                     }
                 }
             }

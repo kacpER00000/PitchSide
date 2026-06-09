@@ -7,25 +7,25 @@ import com.example.pitchside.data.LeagueScorer
 import com.example.pitchside.data.LeagueScorerDao
 import com.example.pitchside.data.LeagueTable
 import com.example.pitchside.data.LeagueTableDao
+import com.example.pitchside.data.Resource
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlin.collections.flatMap
 
 class LeagueRepository(private val leagueApi: CompetitionAPI, private val leagueDao: LeagueDao, private val leagueTableDao: LeagueTableDao, private val leagueScorerDao: LeagueScorerDao) {
-    fun getAllLeagues(): Flow<List<League>> {
-        return leagueDao.getAllLeagues()
-    }
+    fun getAllLeagues(): Flow<Resource<List<League>>> =
+        leagueDao.getAllLeagues().asResource()
 
-    fun getStandingForLeague(leagueCode: String): Flow<List<LeagueTableDao.LeagueTableWithTeam>>{
-        return leagueTableDao.getStandingForLeagueWithTeams(leagueCode)
-    }
+    fun getStandingForLeague(leagueCode: String): Flow<Resource<List<LeagueTableDao.LeagueTableWithTeam>>> =
+        leagueTableDao.getStandingForLeagueWithTeams(leagueCode).asResource()
 
-    fun getLeagueScorersForLeague(leagueCode: String): Flow<List<LeagueScorerDao.LeagueScorerWithTeam>>{
-        return leagueScorerDao.getTopLeagueScorersWithTeam(leagueCode)
-    }
+    fun getLeagueScorersForLeague(leagueCode: String): Flow<Resource<List<LeagueScorerDao.LeagueScorerWithTeam>>> =
+        leagueScorerDao.getTopLeagueScorersWithTeam(leagueCode).asResource()
 
-    fun getLeagueByLeagueCode(leagueCode: String): Flow<League> {
-        return leagueDao.getLeagueByCode(leagueCode)
-    }
+    fun getLeagueByLeagueCode(leagueCode: String): Flow<Resource<League>> =
+        leagueDao.getLeagueByCode(leagueCode).asResource()
 
     suspend fun refreshDataForLeague(leagueCode: String){
         try {
@@ -80,4 +80,11 @@ class LeagueRepository(private val leagueApi: CompetitionAPI, private val league
             throw e
         }
     }
+
+    private fun <T> Flow<T>.asResource(): Flow<Resource<T>> =
+        map<T, Resource<T>> { Resource.Success(it) }
+            .onStart { emit(Resource.Loading) }
+            .catch { e ->
+                emit(Resource.Error(message = e.localizedMessage ?: "Wystapil nieznany blad", exception = Exception(e)))
+            }
 }

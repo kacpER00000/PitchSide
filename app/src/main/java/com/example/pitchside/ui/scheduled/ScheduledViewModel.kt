@@ -20,10 +20,6 @@ class ScheduledViewModel(application: Application) : AndroidViewModel(applicatio
     private val matchesAPI = RetrofitManager.create<MatchesAPI>()
     private val matchRepository = MatchRepository(db.matchDao(), db.teamDao(), matchesAPI)
     val scheduled = matchRepository.getScheduledMatches().asLiveData()
-    private val _error = MutableLiveData(false)
-    private val _isFetching = MutableLiveData(false)
-    val error = _error
-    val isFetching = _isFetching
     private val favoriteDao = AppDatabase.getDatabase(application).favoriteDao()
     private val _favoriteIds = MutableLiveData<Set<Int>>(emptySet())
     val favoriteIds = _favoriteIds

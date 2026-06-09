@@ -12,6 +12,7 @@ import com.example.pitchside.api.responses.MatchEntry
 import com.example.pitchside.data.AppDatabase
 import com.example.pitchside.data.Favorite
 import com.example.pitchside.data.MatchDao
+import com.example.pitchside.data.Resource
 import com.example.pitchside.managers.RetrofitManager
 import com.example.pitchside.managers.SessionManager
 import com.example.pitchside.repositories.MatchRepository
@@ -25,7 +26,7 @@ class MatchDetailsViewModel(application: Application) : AndroidViewModel(applica
 
     private val matchId = MutableLiveData(-1);
 
-    val match: LiveData<MatchDao.MatchWithTeams> = matchId.switchMap { matchId ->
+    val match: LiveData<Resource<MatchDao.MatchWithTeams>> = matchId.switchMap { matchId ->
         matchRepository.getMatchByMatchId(matchId).asLiveData()
     }
 
@@ -47,19 +48,19 @@ class MatchDetailsViewModel(application: Application) : AndroidViewModel(applica
 
     fun toggleFavorite() {
         val user = SessionManager.loggedInUser ?: return
-        if(matchId.value == null){return}
-        val m = match.value ?: return
+        val currentMatchId = matchId.value ?: return
+        val m = (match.value as? Resource.Success)?.data ?: return
 
         viewModelScope.launch {
             val isFav = _isFavorite.value ?: false
             if (isFav) {
-                favoriteDao.usunZUlubionych(user.uzytkownik_id, "MECZ", matchId.value)
+                favoriteDao.usunZUlubionych(user.uzytkownik_id, "MECZ", currentMatchId)
             } else {
                 favoriteDao.dodajDoUlubionych(
                     Favorite(
                         uzytkownik_id = user.uzytkownik_id,
                         typ_obiektu = "MECZ",
-                        obiekt_id = matchId.value,
+                        obiekt_id = currentMatchId,
                         nazwa_gospodarza = m.homeTeamName,
                         skrot_gospodarza = m.homeTeamName,
                         herb_gospodarza = m.homeTeamCrest,

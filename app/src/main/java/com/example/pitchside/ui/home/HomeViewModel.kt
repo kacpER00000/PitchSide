@@ -13,6 +13,7 @@ import com.example.pitchside.data.AppDatabase
 import com.example.pitchside.data.Favorite
 import com.example.pitchside.data.League
 import com.example.pitchside.data.MatchDao.MatchWithTeams
+import com.example.pitchside.data.Resource
 import com.example.pitchside.managers.RetrofitManager
 import com.example.pitchside.managers.SessionManager
 import com.example.pitchside.repositories.LeagueRepository
@@ -28,8 +29,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val leagueRepository = LeagueRepository(competitionAPI, db.leagueDao(), db.leagueTableDao(), db.leagueScorerDao())
     private val favoriteDao = db.favoriteDao()
 
-    val competitions: LiveData<List<League>> = leagueRepository.getAllLeagues().asLiveData()
-    val scheduled: LiveData<List<MatchWithTeams>> = matchRepository.getScheduledMatches().asLiveData()
+    val competitions: LiveData<Resource<List<League>>> = leagueRepository.getAllLeagues().asLiveData()
+    val scheduled = matchRepository.getScheduledMatches().asLiveData()
 
     private val _favoriteIds = MutableLiveData<Set<Int>>(emptySet())
     val favoriteIds = _favoriteIds
@@ -109,12 +110,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun ensureDataLoaded() {
         viewModelScope.launch {
             try {
-                if (matchRepository.isMatchesEmpty()) {
+                if (matchRepository.isScheduledMatchesEmpty()) {
+                    _isFetching.value = true
                     matchRepository.refreshData()
                 }
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Błąd bazy danych: ${e.message}")
                 _error.postValue(true)
+            } finally {
+                _isFetching.value = false
             }
         }
     }

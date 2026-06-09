@@ -31,6 +31,7 @@ import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.example.pitchside.R
 import com.example.pitchside.data.MatchDao
+import com.example.pitchside.data.Resource
 import com.example.pitchside.managers.SessionManager
 import com.example.pitchside.ui.home.CrestAsyncImage
 
@@ -61,33 +62,46 @@ class ScheduledFragment : Fragment() {
 
 @Composable
 fun ScheduledScreen(viewModel: ScheduledViewModel, onMatchClick: (Int) -> Unit) {
-    val matches by viewModel.scheduled.observeAsState(emptyList())
+    val matches by viewModel.scheduled.observeAsState(initial = Resource.Loading)
     val favoriteIds by viewModel.favoriteIds.observeAsState(emptySet())
-    val hasError by viewModel.error.observeAsState(false)
 
-    ScheduledScreenContent(
-        matches = matches,
-        favoriteIds = favoriteIds,
-        hasError = hasError,
-        onMatchClick = onMatchClick,
-        onFavoriteToggle = { viewModel.toggleFavorite(it) }
-    )
+    when(val state = matches){
+        is Resource.Loading -> {
+            Box(
+                modifier = Modifier.fillMaxSize().background(Color.White),
+                contentAlignment = Alignment.Center
+
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.width(64.dp),
+                    color = Color(0xFFD4AF37),
+                    trackColor = Color(0xFF111111),
+                )
+            }
+        }
+
+        is Resource.Error -> {
+            Toast.makeText(LocalContext.current, "Wystąpił błąd podczas pobierania danych.", Toast.LENGTH_LONG).show()
+        }
+
+        is Resource.Success -> {
+            ScheduledScreenContent(
+                matches = state.data,
+                favoriteIds = favoriteIds,
+                onMatchClick = onMatchClick,
+                onFavoriteToggle = { viewModel.toggleFavorite(it) }
+            )
+        }
+    }
 }
 
 @Composable
 fun ScheduledScreenContent(
     matches: List<MatchDao.MatchWithTeams>,
     favoriteIds: Set<Int>,
-    hasError: Boolean,
     onMatchClick: (Int) -> Unit,
     onFavoriteToggle: (MatchDao.MatchWithTeams) -> Unit
 ) {
-    val context = LocalContext.current
-    LaunchedEffect(hasError) {
-        if (hasError) {
-            Toast.makeText(context, "Wystąpił błąd podczas pobierania danych.", Toast.LENGTH_LONG).show()
-        }
-    }
     Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
         ScheduledHeader()
         MatchesList(matches, favoriteIds, onMatchClick, onFavoriteToggle)
@@ -168,17 +182,4 @@ fun MatchItem(
             }
         }
     }
-}
-
-@Composable
-fun TeamCrestImage(url: String, teamName: String) {
-    AsyncImage(
-        model = ImageRequest.Builder(LocalContext.current)
-            .data(url)
-            .decoderFactory(SvgDecoder.Factory())
-            .crossfade(true)
-            .build(),
-        contentDescription = teamName,
-        modifier = Modifier.size(30.dp)
-    )
 }
